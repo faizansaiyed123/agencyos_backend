@@ -5,7 +5,7 @@ Last verified: 2026-10-20
 ## Critical / blocking
 
 ### CI runner execution unavailable
-GitHub Actions workflow runs have been created, but the GitHub API currently reports zero jobs for backend runs and no frontend run result. Therefore CI cannot yet be used as test evidence.
+Frontend CI is executing and passing its production build. Backend CI runs are being created but currently conclude as failures, while the connected job/log APIs return no individual jobs, so the exact backend failing step is not yet observable through the available connector.
 
 Next action: verify repository Actions availability/settings and rerun after the workflow is recognized by a runner.
 
@@ -17,7 +17,7 @@ Next action: use GitHub Actions or a network-enabled execution environment.
 ## High priority
 
 ### Production email delivery
-Password recovery and invite emails are now queued, but the configured production email backend is still console-based; a real provider is required before external users can receive mail.
+SMTP delivery is implemented and required in prod, but deployment still needs real provider credentials and a verified sender address.
 
 ### Client role has no product workflow
 The role exists but the permission matrix is empty. This means a client account does not currently have a usable portal.
