@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      AGENCYOS_ENV: dev
+      AGENCYOS_DATABASE_URL: postgresql+psycopg://agencyos_app:agencyos_app@db:5432/agencyos
+      AGENCYOS_MIGRATION_DATABASE_URL: postgresql+psycopg://agencyos:agencyos@db:5432/agencyos
+      AGENCYOS_COOKIE_SECURE: "false"
+      AGENCYOS_CORS_ORIGINS: '["http://localhost:8080"]'
+      AGENCYOS_EMAIL_BACKEND: console
+      AGENCYOS_APP_BASE_URL: http://localhost:8080
+      AGENCYOS_STORAGE_DIR: /app/var/files
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - agencyos_files:/app/var/files
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build: .
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      AGENCYOS_ENV: dev
+      AGENCYOS_DATABASE_URL: postgresql+psycopg://agencyos_app:agencyos_app@db:5432/agencyos
+      AGENCYOS_MIGRATION_DATABASE_URL: postgresql+psycopg://agencyos:agencyos@db:5432/agencyos
+      AGENCYOS_EMAIL_BACKEND: console
+      AGENCYOS_APP_BASE_URL: http://localhost:8080
+      AGENCYOS_STORAGE_DIR: /app/var/files
+    command: ["python", "-m", "app.worker"]
+    volumes:
+      - agencyos_files:/app/var/files
+
+volumes:
+  pgdata:
+  agencyos_files:
