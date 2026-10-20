@@ -1,3 +1,17 @@
+# Current Verified Project Checkpoint — 2026-10-20
+
+This file contained historical implementation notes. The current verified state is maintained in:
+- `PROJECT_STATUS.md`
+- `IMPLEMENTATION_CHECKLIST.md`
+- `ARCHITECTURE_AND_API_MAP.md`
+- `KNOWN_ISSUES.md`
+- `RECOVERY.md`
+- `FEATURE_ROADMAP.md`
+
+Since the historical notes below were written, the source has been re-audited and additional work has been implemented, including refresh-token concurrency hardening, atomic proposal acceptance, serialized idempotency for invite/payment workflows, password recovery, SMTP email delivery, frontend resilience, regression tests, and CI workflows. Do not use older statements below as proof that current tests or deployments were executed.
+
+---
+
 # AgencyOS — Progress
 
 State as of this session. Read this first in any new session before writing code;
