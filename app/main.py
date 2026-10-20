@@ -54,6 +54,20 @@ app.middleware("http")(tracing.trace_request)
 
 
 @app.middleware("http")
+async def security_headers(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    response = await call_next(request)
+    response.headers["x-content-type-options"] = "nosniff"
+    response.headers["x-frame-options"] = "DENY"
+    response.headers["referrer-policy"] = "strict-origin-when-cross-origin"
+    response.headers["permissions-policy"] = "camera=(), microphone=(), geolocation=()"
+    if settings.env == "prod":
+        response.headers["strict-transport-security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+
+@app.middleware("http")
 async def request_context(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
