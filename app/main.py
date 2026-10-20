@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
+from app.modules.billing import jobs as billing_jobs
 from app.modules.billing.router import router as billing_router
 from app.modules.collab.router import router as collab_router
 from app.modules.crm.router import router as crm_router
@@ -32,6 +33,7 @@ from app.platform.webhooks_router import router as webhooks_router
 
 configure_logging()
 identity_jobs.register()
+billing_jobs.register()
 proposals_jobs.register()
 webhooks_platform.register()
 tracing.init_from_settings()
