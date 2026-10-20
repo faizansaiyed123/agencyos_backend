@@ -269,6 +269,7 @@ def create_invite(
         invited_by=user.id,
         email=body.email,
         role=body.role,
+        client_id=body.client_id,
         commit=not bool(idempotency_key),
     )
     # In production the raw token is emailed to the invitee, not returned in the API
