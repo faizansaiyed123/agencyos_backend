@@ -12,8 +12,8 @@ Last verified: 2026-10-20
 
 ## Current checkpoint
 
-Frontend HEAD: `ee393752d7e8b26c0e0ff660dc44f922caeb6351`
-Backend HEAD: `a2dcbe62d8a56ba9c406ec66ad2a37d25351aea9`
+Frontend HEAD: `9cc8899f8e2eee9bbed745a4802a24b446ba9349`
+Backend HEAD: `8c7db4e01b412d9b4107f5ff36dc8159829a03b5`
 
 Latest backend work:
 - runtime dependencies declared;
