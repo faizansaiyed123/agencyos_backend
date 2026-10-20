@@ -7,8 +7,8 @@ Last verified: 2026-10-20
 GitHub access is verified for both repositories with admin/maintain/push permissions on `main`.
 
 Current heads:
-- Frontend: `ee393752d7e8b26c0e0ff660dc44f922caeb6351`
-- Backend: `a2dcbe62d8a56ba9c406ec66ad2a37d25351aea9`
+- Frontend: `60c3eb1ce1622d1be1a6fd31569f69e7a1e57810`
+- Backend: current head to be refreshed after this checkpoint
 
 Local repository execution is not available in this session because the container cannot resolve github.com. GitHub source inspection and writes are available.
 
@@ -48,12 +48,12 @@ Backend:
 
 ## Not yet verified
 
-No local test suite has been executed because repository cloning is blocked by the environment's network/DNS. GitHub Actions workflow runs were created, but GitHub currently reports zero jobs for the backend runs and no frontend run has appeared, so CI is not evidence of a pass yet.
+No local test suite has been executed because repository cloning is blocked by the environment's network/DNS. Frontend GitHub Actions has successfully executed the production build. Backend workflow runs are currently concluding as failures; the connected GitHub job/log APIs are not exposing the individual job details, so the exact failing step still needs to be recovered.
 
 ## Significant incomplete/product gaps
 
 - Client role currently has no permissions and therefore has no functional client portal.
-- Production email delivery is not implemented; the current email abstraction is console/memory.
+- Production email delivery still requires deployment-specific SMTP credentials and provider configuration, but the SMTP sender is implemented.
 - Invoice PDF rendering/emailing and payment reversal/credit-note flows are not implemented.
 - File storage is local disk only; an object-storage adapter is not implemented.
 - Frontend has no automated browser/unit test command despite Playwright being installed.
