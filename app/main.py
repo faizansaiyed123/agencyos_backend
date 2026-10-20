@@ -18,6 +18,7 @@ from app.modules.files.router import router as files_router
 from app.modules.identity import jobs as identity_jobs
 from app.modules.identity.router import router as identity_router
 from app.modules.privacy.router import router as privacy_router
+from app.modules.portal.router import router as portal_router
 from app.modules.projects.router import router as projects_router
 from app.modules.proposals import jobs as proposals_jobs
 from app.modules.proposals.router import router as proposals_router
@@ -111,6 +112,7 @@ app.include_router(crm_router, prefix="/api/v1")
 app.include_router(proposals_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
 app.include_router(webhooks_router, prefix="/api/v1")
+app.include_router(portal_router, prefix="/api/v1")
 app.include_router(time_router, prefix="/api/v1")
 app.include_router(billing_router, prefix="/api/v1")
 app.include_router(collab_router, prefix="/api/v1")
