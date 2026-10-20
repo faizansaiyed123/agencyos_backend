@@ -186,7 +186,7 @@ def pdf(invoice_id: uuid.UUID, user: Reader, db: Db) -> Response:
     )
 
 
-@router.post("/invoices/{invoice_id}/send", status_code=202)
+@router.post("/invoices/{invoice_id}/send", status_code=202, response_model=None)
 def send_invoice(
     invoice_id: uuid.UUID,
     user: Manager,
