@@ -250,11 +250,11 @@ def accept_proposal(
         ],
         manager_user_id=deal.owner_user_id,
     )
-    db.commit()  # commit the proposal's own state change as its own atomic step
 
     if deal.stage != "won":
         crm_service.set_deal_value(
-            db, org_id=org_id, actor_id=actor_id, deal_id=deal.id, value_amount=total
+            db, org_id=org_id, actor_id=actor_id, deal_id=deal.id,
+            value_amount=total, commit=False,
         )
         current_index = HAPPY_PATH_ORDER.index(deal.stage)
         for next_stage in HAPPY_PATH_ORDER[current_index + 1 :]:
@@ -265,7 +265,7 @@ def accept_proposal(
             )
             crm_service.change_deal_stage(
                 db, org_id=org_id, actor_id=actor_id, deal_id=deal.id, to_stage=next_stage,
-                lost_reason=None, note=note,
+                lost_reason=None, note=note, commit=False,
             )  # fmt: skip
 
     return proposal
