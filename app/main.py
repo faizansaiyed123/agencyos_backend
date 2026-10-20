@@ -18,8 +18,8 @@ from app.modules.crm.router import router as crm_router
 from app.modules.files.router import router as files_router
 from app.modules.identity import jobs as identity_jobs
 from app.modules.identity.router import router as identity_router
-from app.modules.privacy.router import router as privacy_router
 from app.modules.portal.router import router as portal_router
+from app.modules.privacy.router import router as privacy_router
 from app.modules.projects.router import router as projects_router
 from app.modules.proposals import jobs as proposals_jobs
 from app.modules.proposals.router import router as proposals_router
