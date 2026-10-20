@@ -41,16 +41,17 @@ Legend: ✅ verified in source; ⚠️ implemented but execution not yet verifie
 - ✅ Reporting/search.
 - ✅ Proposal acceptance now uses one transaction for proposal/project/deal changes.
 - ⬜ Payment refunds/credits.
-- ⬜ Invoice PDF and outbound invoice email.
+- ✅ Invoice PDF and outbound invoice email.
 - ⬜ Object-storage production adapter.
 
 ## Frontend
 - ✅ Auth/MFA/invite acceptance UI.
+- ✅ Client portal UI with scoped proposal/invoice/project workflows.
 - ✅ Clients, pipeline, proposals, projects, work, invoices, reports, team, settings, security.
 - ✅ Real API hooks and role-aware navigation.
 - ⚠️ Responsive/polish audit still required across every screen.
 - ✅ Password reset UI/API.
-- ⬜ Functional client portal.
+- ✅ Functional client portal.
 - ⬜ Browser/unit test suite.
 - ✅ Generic safe GET timeout/retry/offline UX.
 
