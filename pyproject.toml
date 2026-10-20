@@ -72,6 +72,7 @@ forbidden_modules = ["app.modules", "app.platform"]
 name = "module layering (higher may import lower, never the reverse)"
 type = "layers"
 layers = [
+  "app.modules.portal",
   "app.modules.privacy | app.modules.search",
   "app.modules.reporting",
   "app.modules.files",
