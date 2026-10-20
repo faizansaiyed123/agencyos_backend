@@ -6,7 +6,9 @@ from typing import Literal, Self
 from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_DEV_SECRET = "dev-only-secret-change-me-dev-only-secret"  # noqa: S105 — placeholder, not a real secret
+_DEV_SECRET = (  # noqa: S105 — placeholder, not a real secret
+    "dev-only-secret-change-me-dev-only-secret"
+)
 _DEV_MFA_KEY = "41viZg081Ww-yoKpjf75xyCZUQNruwxDa8Ken-EqgOw="  # noqa: S105 — dev-only Fernet key
 
 
