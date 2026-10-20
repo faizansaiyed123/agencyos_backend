@@ -472,6 +472,7 @@ def record_payment(
     paid_on: date | None,
     method: str,
     reference: str | None,
+    commit: bool = True,
 ) -> tuple[Invoice, Payment]:
     inv = get_invoice(db, org_id, invoice_id, lock=True)  # row lock: concurrent payments serialise
     if inv.status not in PAYABLE:
@@ -520,7 +521,8 @@ def record_payment(
             event_type="invoice.paid",
             data={"invoice_id": str(inv.id), "number": inv.number},
         )
-    db.commit()
+    if commit:
+        db.commit()
     return inv, payment
 
 
