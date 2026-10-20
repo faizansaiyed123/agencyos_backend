@@ -15,6 +15,7 @@ import structlog
 from app.core.config import get_settings
 from app.core.db import get_sessionmaker
 from app.core.logging import configure_logging
+from app.modules.billing import jobs as billing_jobs
 from app.modules.identity import jobs as identity_jobs
 from app.modules.proposals import jobs as proposals_jobs
 from app.platform import webhooks as webhooks_platform
@@ -22,6 +23,7 @@ from app.platform.jobs import run_worker_once
 
 configure_logging()
 identity_jobs.register()
+billing_jobs.register()
 proposals_jobs.register()
 webhooks_platform.register()
 log = structlog.get_logger()
