@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from sqlalchemy import select
@@ -11,8 +12,8 @@ from app.platform.email import send_email
 
 
 def _send_invoice_email(payload: dict[str, Any], db: Session) -> None:
-    org_id = payload["org_id"]
-    invoice_id = payload["invoice_id"]
+    org_id = uuid.UUID(payload["org_id"])
+    invoice_id = uuid.UUID(payload["invoice_id"])
     invoice = db.scalar(
         select(Invoice).where(Invoice.org_id == org_id, Invoice.id == invoice_id)
     )
