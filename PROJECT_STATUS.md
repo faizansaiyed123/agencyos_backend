@@ -48,13 +48,14 @@ Backend:
 
 ## Not yet verified
 
-No local test suite has been executed because repository cloning is blocked by the environment's network/DNS. Frontend GitHub Actions has successfully executed build, Playwright smoke tests, and Docker build on recent commits; the latest documentation-only run is still in progress.
+No local test suite has been executed in this session. Frontend GitHub Actions is executing build, Playwright smoke tests, and Docker build. Backend workflow runs continue to conclude as failures without job records exposed by the connected GitHub API.
 
-## Significant incomplete/product gaps
+## Significant remaining production work
 
-- Client role currently has no permissions and therefore has no functional client portal.
-- Production email delivery still requires deployment-specific SMTP credentials and provider configuration, but the SMTP sender is implemented.
-- Invoice PDF rendering/emailing and payment reversal/credit-note flows are not implemented.
+- Backend GitHub Actions still reports failed workflow runs with no job records exposed through the connected Actions API; source-level verification continues through targeted regression coverage.
+- Production still requires deployment-specific SMTP credentials, verified sender, real database credentials, and persistent file storage.
+- Payment reversal/credit-note accounting remains intentionally outside the current billing model.
+- Final production smoke test must be run after infrastructure credentials are supplied.
 - File storage is local disk only; an object-storage adapter is not implemented.
 - Frontend has no automated browser/unit test command despite Playwright being installed.
-- CI runner execution still needs to be resolved and then rerun.
+- Backend CI runner/job observability still needs to be resolved; frontend CI is executing normally.
