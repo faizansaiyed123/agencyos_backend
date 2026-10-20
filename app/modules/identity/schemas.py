@@ -62,6 +62,7 @@ class UserOut(BaseModel):
     email: str
     full_name: str
     role: str
+    client_id: uuid.UUID | None
     is_active: bool
     mfa_enabled: bool
     last_login_at: datetime | None
@@ -71,6 +72,7 @@ class UserOut(BaseModel):
 class InviteCreateRequest(BaseModel):
     email: EmailStr
     role: str
+    client_id: uuid.UUID | None = None
 
     @field_validator("role")
     @classmethod
@@ -87,6 +89,7 @@ class InviteOut(BaseModel):
     email: str
     role: str
     expires_at: datetime
+    client_id: uuid.UUID | None
     accepted_at: datetime | None
     created_at: datetime
 
