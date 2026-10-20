@@ -16,9 +16,6 @@ __pycache__/
 .mypy_cache/
 .import_linter_cache/
 
-# Tests
-tests/
-
 # OS
 .DS_Store
 Thumbs.db
