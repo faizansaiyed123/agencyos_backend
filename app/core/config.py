@@ -83,6 +83,15 @@ class Settings(BaseSettings):
                 )
             if not self.cookie_secure:
                 raise ValueError("AGENCYOS_COOKIE_SECURE must be true in prod")
+            if "*" in self.cors_origins:
+                raise ValueError("AGENCYOS_CORS_ORIGINS must not contain * in prod")
+            invalid_origins = [
+                origin for origin in self.cors_origins
+                if not origin.startswith("https://")
+                and origin not in {"http://localhost", "http://127.0.0.1"}
+            ]
+            if invalid_origins:
+                raise ValueError("Production CORS origins must use HTTPS")
             if self.email_backend != "smtp":
                 raise ValueError("AGENCYOS_EMAIL_BACKEND must be smtp in prod")
             if not self.smtp_host:
