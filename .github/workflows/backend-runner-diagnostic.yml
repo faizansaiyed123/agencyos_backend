@@ -1,0 +1,17 @@
+name: Backend runner diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/backend-runner-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - run: python --version
+      - run: echo "backend runner reached"
