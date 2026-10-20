@@ -8,6 +8,7 @@ from app.modules.crm import service as crm_service
 from app.modules.crm.deal_states import can_transition, is_terminal
 from app.modules.files.service import sanitize_filename
 from app.modules.identity import queries as identity_queries
+from app.modules.portal.service import _client_id
 from app.modules.proposals import service as proposal_service
 from app.platform.webhooks import validate_endpoint_url
 
@@ -155,3 +156,16 @@ def test_app_imports_with_declared_runtime_dependencies() -> None:
     assert "/api/v1/auth/login" in paths
     assert "/api/v1/auth/password/forgot" in paths
     assert "/api/v1/auth/password/reset" in paths
+
+
+def test_client_portal_requires_an_explicit_client_link() -> None:
+    with pytest.raises(Exception):
+        _client_id(SimpleNamespace(role="client", client_id=None))
+
+
+def test_app_exposes_client_portal_routes() -> None:
+    from app.main import app
+
+    paths = {route.path for route in app.routes}
+    assert "/api/v1/portal/overview" in paths
+    assert "/api/v1/portal/proposals/{proposal_id}/accept" in paths
