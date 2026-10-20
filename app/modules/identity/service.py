@@ -9,6 +9,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import timedelta
 
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -443,6 +444,17 @@ def create_invite(
         raise Conflict("Client invites must be linked to a client", code="client_link_required")
     if role != Role.CLIENT.value and client_id is not None:
         raise Conflict("Only client invites can be linked to a client", code="invalid_client_link")
+    if role == Role.CLIENT.value:
+        exists = db.scalar(
+            text(
+                "SELECT 1 FROM clients WHERE org_id = :org_id AND id = :client_id "
+                "AND archived_at IS NULL"
+            ),
+            {"org_id": org_id, "client_id": client_id},
+        )
+        if exists is None:
+            raise NotFound("Client not found")
+
     existing = queries.find_pending_invite_by_email(db, org_id, email.lower())
     if existing is not None:
         existing.revoked_at = utcnow()
