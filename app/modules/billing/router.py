@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.pagination import Page, PageDep
 from app.core.errors import BusinessRuleViolation, Conflict, NotFound
+from app.core.pagination import Page, PageDep
 from app.core.permissions import Perm
 from app.modules.billing import service
 from app.modules.billing.pdf import render_invoice_pdf
@@ -28,9 +28,9 @@ from app.modules.billing.schemas import (
     UnbilledRow,
     VoidRequest,
 )
+from app.modules.crm.models import Contact
 from app.modules.identity.deps import require
 from app.modules.identity.models import User
-from app.modules.crm.models import Contact
 from app.modules.time.models import amount_cents
 from app.platform import idempotency
 
