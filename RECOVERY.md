@@ -2,36 +2,31 @@
 
 Last verified: 2026-10-20
 
-## Resume procedure
+## Verified release heads
 
-1. Read `PROJECT_STATUS.md`, `IMPLEMENTATION_CHECKLIST.md`, `KNOWN_ISSUES.md`, and `FEATURE_ROADMAP.md`.
-2. Read both repository `main` heads and inspect the latest commits.
-3. Re-check that source changes described in status docs still exist.
-4. Inspect GitHub Actions state before claiming any test result.
-5. Continue with the highest-priority unchecked item.
+Frontend: 9a330d1c06a04e9b7d80bd0f1e142a65d184a2df
+Backend: 47c0179c91a54ab86d7810785e186bd9c050f813
 
-## Current checkpoint
+## Release gate
 
-Frontend HEAD: `9cc8899f8e2eee9bbed745a4802a24b446ba9349`
-Backend HEAD: `8c7db4e01b412d9b4107f5ff36dc8159829a03b5`
+The frontend repository CI verifies npm install, production build, Playwright browser smoke tests, and Docker build.
+The frontend repository Backend compatibility workflow verifies the current backend main with dependency installation, Ruff, pytest, and Docker build.
 
-Latest backend work:
-- runtime dependencies declared;
-- refresh-token rotation locked;
-- proposal acceptance made atomic;
-- idempotent invite/payment transactions serialized;
-- regression tests added;
-- CI workflow added.
+The verified release gates are green.
 
-## Safe continuation rules
+## Continue safely
 
-- Do not reset or force-push.
-- Do not overwrite unrelated user changes.
-- Re-fetch file SHA before each update.
-- Prefer one coherent change per commit.
-- After a transaction or auth change, add a regression test.
-- Do not mark work verified until a real test/build runner has executed it.
+- Keep main deployable.
+- Re-fetch file SHAs before edits.
+- Add regression tests for security or transaction changes.
+- Re-run the backend compatibility workflow after backend code changes.
+- Treat roadmap enhancements as post-release work.
 
-## If network access remains unavailable
+## Production setup
 
-Use the GitHub connector for source inspection and writes. Do not claim local execution. Keep documentation current and leave exact next actions.
+After deployment values are supplied:
+- run `alembic upgrade head`;
+- configure the API runtime as the non-owner database role;
+- configure the standalone worker;
+- verify `/healthz` and `/readyz`;
+- smoke-test login, MFA, password recovery, client portal, invoice PDF/email, and logout.
