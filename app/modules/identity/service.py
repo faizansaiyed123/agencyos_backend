@@ -29,7 +29,14 @@ from app.core.security import (
     verify_password,
 )
 from app.modules.identity import mfa, queries
-from app.modules.identity.models import Invite, MfaRecoveryCode, Organization, RefreshToken, User
+from app.modules.identity.models import (
+    Invite,
+    MfaRecoveryCode,
+    Organization,
+    PasswordResetToken,
+    RefreshToken,
+    User,
+)
 from app.platform import jobs
 from app.platform.audit import record_audit
 
@@ -100,6 +107,90 @@ def signup_organization(
     refresh_token = _issue_refresh_token(db, user, family_id=uuid.uuid4())
     db.commit()
     return AuthResult(user, access_token, expires_in, refresh_token)
+
+
+def request_password_reset(db: Session, *, email: str) -> str | None:
+    """Create a single-use password-reset token for an active user.
+    Returns the raw token only to the caller so the email job can deliver it; the
+    token itself is stored only as a hash. The public endpoint must return the
+    same response whether the account exists or not.
+    """
+    normalized = email.lower()
+    user = queries.find_user_by_email_for_login(db, normalized)
+    if user is None or not user.is_active:
+        db.rollback()
+        return None
+
+    set_org_context(db, user.org_id)
+    queries.revoke_live_password_reset_tokens(db, user.org_id, user.id)
+
+    raw, digest = new_opaque_token()
+    expires_at = utcnow() + timedelta(minutes=get_settings().password_reset_ttl_minutes)
+    db.add(
+        PasswordResetToken(
+            org_id=user.org_id,
+            user_id=user.id,
+            token_hash=digest,
+            expires_at=expires_at,
+        )
+    )
+    settings = get_settings()
+    reset_url = f"{settings.app_base_url}/reset-password?token={raw}"
+    jobs.enqueue(
+        db,
+        job_type="send_password_reset_email",
+        org_id=user.org_id,
+        payload={"email": user.email, "reset_url": reset_url},
+    )
+    db.commit()
+    return raw
+
+
+def reset_password(
+    db: Session, *, raw_token: str, new_password: str
+) -> None:
+    digest = hash_token(raw_token)
+    token = queries.find_password_reset_token(db, digest, lock=True)
+    if token is None:
+        db.rollback()
+        raise Conflict("This password reset link is invalid or expired", code="invalid_reset_token")
+
+    set_org_context(db, token.org_id)
+    now = utcnow()
+    if token.used_at is not None or token.expires_at <= now:
+        db.rollback()
+        raise Conflict("This password reset link is invalid or expired", code="invalid_reset_token")
+
+    user = queries.get_user(db, token.org_id, token.user_id)
+    if user is None or not user.is_active:
+        db.rollback()
+        raise Conflict("This password reset link is invalid or expired", code="invalid_reset_token")
+
+    user.password_hash = hash_password(new_password)
+    user.failed_login_count = 0
+    user.locked_until = None
+    token.used_at = now
+
+    # Invalidate every existing refresh session so the new password closes old
+    # long-lived sessions. Short-lived access JWTs naturally expire within their TTL.
+    db.execute(
+        RefreshToken.__table__.update()
+        .where(
+            RefreshToken.org_id == token.org_id,
+            RefreshToken.user_id == token.user_id,
+            RefreshToken.revoked_at.is_(None),
+        )
+        .values(revoked_at=now)
+    )
+    record_audit(
+        db,
+        org_id=token.org_id,
+        actor_user_id=user.id,
+        action="auth.password_reset",
+        entity_type="user",
+        entity_id=user.id,
+    )
+    db.commit()
 
 
 def authenticate(db: Session, *, email: str, password: str) -> LoginOutcome:
