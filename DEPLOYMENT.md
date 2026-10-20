@@ -1,79 +1,77 @@
 # AgencyOS Backend Deployment
 
+## Deployable release
+
+The current release has passed the backend Ruff/tests/Docker gate and the frontend build/browser/Docker/security gates.
+
 ## Production architecture
 
-Run the frontend and backend behind the same public origin when possible.
-
 - Browser: https://app.example.com
-- Frontend container: Nginx serves the SPA and proxies /api/*
-- Backend container: FastAPI/Uvicorn on an internal network
-- Worker container: python -m app.worker
-- PostgreSQL: managed PostgreSQL or the supplied development container
-- File storage: persistent volume for small/self-hosted deployments; object storage adapter remains a future hardening item
-- SMTP: required in production for transactional email, including password resets, invites, and invoice PDFs
+- Frontend: Nginx SPA with /api/* reverse proxy
+- Backend: FastAPI/Uvicorn
+- Worker: python -m app.worker
+- PostgreSQL: managed or persistent PostgreSQL
+- File storage: persistent volume for the shipped filesystem provider
+- SMTP: required for transactional email
 
-The frontend API client already targets /api/v1, so same-origin proxying keeps the refresh cookie and API requests on one site.
+Same-origin deployment is recommended because the refresh token uses a secure httpOnly cookie.
 
-## Backend environment
+## Production environment
 
-At minimum in production configure:
-
+Set:
 - AGENCYOS_ENV=prod
 - strong AGENCYOS_JWT_SECRET
 - strong AGENCYOS_MFA_ENCRYPTION_KEY
 - AGENCYOS_DATABASE_URL
 - AGENCYOS_MIGRATION_DATABASE_URL
-- AGENCYOS_CORS_ORIGINS with the actual frontend origin if cross-origin requests are used
+- HTTPS AGENCYOS_CORS_ORIGINS
 - AGENCYOS_COOKIE_SECURE=true
 - AGENCYOS_APP_BASE_URL=https://app.example.com
 - AGENCYOS_EMAIL_BACKEND=smtp
 - SMTP host/port/credentials/from address
-- persistent AGENCYOS_STORAGE_DIR or a future object-store adapter
-- tracing settings when required
+- persistent AGENCYOS_STORAGE_DIR
+- tracing settings where required
 
-The application rejects production startup when development secrets or non-SMTP email delivery are used.
+The app rejects unsafe production configuration.
 
-## Migrations
+## Database
 
 Run migrations with the schema-owner connection:
 
 alembic upgrade head
 
-The runtime role is deliberately non-owner and RLS-protected. Never run the application as the migration/schema-owner role.
-
-## Billing and client portal
-
-- Issued invoices can be downloaded as PDFs and queued for email delivery.
-- Client users receive access through client-linked invites and the scoped client portal.
-- The standalone worker must register and process the billing email job; the shipped worker does this automatically.
+Run the application with the non-owner runtime role.
 
 ## Worker
 
-Run one or more worker processes with:
+Run:
 
 python -m app.worker
 
-The worker handles queued email, webhook deliveries, proposal jobs, and other durable background work.
+The worker handles email, webhooks, proposal jobs and other durable work.
+
+## Billing and client portal
+
+- Issued invoices can be rendered as PDFs.
+- Invoice emails are queued through the worker.
+- Client users are created through client-linked invites and receive a scoped portal.
+- Client proposal decisions and invoice access are tenant/client constrained.
 
 ## Docker
 
-Build and run the backend image:
+Backend:
 
 docker build -t agencyos-backend .
 
-Run the supplied development backend stack:
+Development stack:
 
 docker compose up --build
 
-This starts PostgreSQL, runs Alembic migrations, starts the API, and starts the worker.
+## Health
 
-## Health endpoints
-
-- /healthz — process/liveness check
-- /readyz — database readiness check
-
-The deployment platform should use /healthz for liveness and /readyz for readiness.
+- /healthz — liveness
+- /readyz — readiness
 
 ## Secrets
 
-Do not commit production .env files. Store production credentials in the deployment platform's secret manager. Rotate any credential that has ever been exposed in logs, commits, or screenshots.
+Never commit production secrets. Put them in the deployment platform's secret manager.
