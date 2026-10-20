@@ -59,9 +59,14 @@ def get_organization(db: Session, org_id: uuid.UUID) -> Organization | None:
     return db.get(Organization, org_id)
 
 
-def find_refresh_token_by_hash(db: Session, token_hash: str) -> RefreshToken | None:
+def find_refresh_token_by_hash(
+    db: Session, token_hash: str, *, lock: bool = False
+) -> RefreshToken | None:
     set_lookup_key(db, token_hash)
-    return db.scalar(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
+    stmt = select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+    if lock:
+        stmt = stmt.with_for_update()
+    return db.scalar(stmt)
 
 
 def find_live_family_tokens(
