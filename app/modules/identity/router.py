@@ -25,6 +25,8 @@ from app.modules.identity.schemas import (
     MfaEnrollConfirmResponse,
     MfaEnrollStartResponse,
     MfaStatusOut,
+    PasswordResetConfirmRequest,
+    PasswordResetRequest,
     MfaVerifyRequest,
     SignupRequest,
     TokenResponse,
@@ -117,6 +119,39 @@ def login(
         token_type="bearer",  # noqa: S106 — OAuth2 token type, not a secret
         expires_in=outcome.auth.expires_in,
     )
+
+
+@router.post("/auth/password/forgot", status_code=202)
+def password_forgot(
+    body: PasswordResetRequest,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+) -> dict[str, str]:
+    settings = get_settings()
+    enforce_rate_limit(
+        db,
+        key=f"account-recovery-ip:{_client_ip(request)}",
+        limit=settings.password_reset_rate_limit_per_hour,
+        window_seconds=3600,
+    )
+    service.request_password_reset(db, email=body.email)
+    return {"message": "If an account exists for that email, a reset link has been sent."}
+
+
+@router.post("/auth/password/reset", status_code=204)
+def password_reset(
+    body: PasswordResetConfirmRequest,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+) -> None:
+    settings = get_settings()
+    enforce_rate_limit(
+        db,
+        key=f"account-recovery-confirm-ip:{_client_ip(request)}",
+        limit=settings.password_reset_rate_limit_per_hour,
+        window_seconds=3600,
+    )
+    service.reset_password(db, raw_token=body.token, new_password=body.password)
 
 
 @router.post("/auth/mfa/verify", response_model=TokenResponse)
