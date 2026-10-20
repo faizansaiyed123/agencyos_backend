@@ -16,14 +16,12 @@ Next action: use GitHub Actions or a network-enabled execution environment.
 
 ## High priority
 
-### Password recovery is incomplete
-Frontend README describes password recovery, but the source contains no password-recovery page and no corresponding backend route was found.
+### Production email delivery
+Password recovery and invite emails are now queued, but the configured production email backend is still console-based; a real provider is required before external users can receive mail.
 
 ### Client role has no product workflow
 The role exists but the permission matrix is empty. This means a client account does not currently have a usable portal.
 
-### Production email delivery
-Email is console/memory based. Invite delivery needs a real provider integration before production use.
 
 ### Idempotency and refresh concurrency
 Fixed in this audit. Regression tests were added, but execution still needs a real test environment.
