@@ -133,7 +133,6 @@ class MfaStatusOut(BaseModel):
     recovery_codes_remaining: int
 
 
-
 class PasswordResetRequest(BaseModel):
     email: EmailStr
 
