@@ -338,7 +338,13 @@ def revoke_refresh_token(db: Session, *, raw_refresh_token: str) -> None:
 
 
 def create_invite(
-    db: Session, *, org_id: uuid.UUID, invited_by: uuid.UUID, email: str, role: str
+    db: Session,
+    *,
+    org_id: uuid.UUID,
+    invited_by: uuid.UUID,
+    email: str,
+    role: str,
+    commit: bool = True,
 ) -> tuple[Invite, str]:
     set_org_context(db, org_id)
     existing = queries.find_pending_invite_by_email(db, org_id, email.lower())
@@ -383,7 +389,8 @@ def create_invite(
         },
     )  # fmt: skip
 
-    db.commit()
+    if commit:
+        db.commit()
     return invite, raw
 
 
