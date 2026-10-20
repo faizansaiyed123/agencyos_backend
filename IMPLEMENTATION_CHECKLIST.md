@@ -24,9 +24,10 @@ Legend: ✅ verified in source; ⚠️ implemented but execution not yet verifie
 - ✅ Feature flags.
 - ✅ Privacy export/erasure.
 - ✅ OpenTelemetry integration.
-- ⚠️ Runtime dependency declaration corrected.
-- ⚠️ Refresh-token concurrency fixed.
-- ⚠️ Idempotency concurrency fixed.
+- ✅ Runtime dependency declaration corrected.
+- ✅ Refresh-token concurrency fixed in source.
+- ✅ Idempotency concurrency fixed in source.
+- ✅ SMTP email sender and production configuration validation.
 
 ## Business modules
 - ✅ CRM clients/contacts/deals.
@@ -37,7 +38,7 @@ Legend: ✅ verified in source; ⚠️ implemented but execution not yet verifie
 - ✅ Collaboration/comments/approvals/notifications.
 - ✅ Files.
 - ✅ Reporting/search.
-- ⚠️ Proposal acceptance now uses one transaction for proposal/project/deal changes.
+- ✅ Proposal acceptance now uses one transaction for proposal/project/deal changes.
 - ⬜ Payment refunds/credits.
 - ⬜ Invoice PDF and outbound invoice email.
 - ⬜ Object-storage production adapter.
