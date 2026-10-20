@@ -12,13 +12,14 @@ have no org_id to scope by yet.
 
 import hashlib
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import ForeignKeyConstraint, Integer, String, UniqueConstraint, Uuid, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.core.config import get_settings
 from app.core.db import set_org_context
 from app.core.errors import AppError
 from app.core.models import Base, created_at_col
@@ -88,6 +89,15 @@ def check_idempotency_key(db: Session, *, org_id: uuid.UUID, key: str, request_f
     )
     if existing is None:
         return
+
+    cutoff = datetime.now(existing.created_at.tzinfo) - timedelta(
+        hours=get_settings().idempotency_key_ttl_hours
+    )
+    if existing.created_at <= cutoff:
+        db.delete(existing)
+        db.flush()
+        return
+
     if existing.request_fingerprint != request_fp:
         raise IdempotencyConflict()
     raise IdempotencyReplay(existing.response_status, existing.response_body)
