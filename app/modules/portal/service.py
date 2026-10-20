@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.db import set_org_context
 from app.core.errors import Forbidden, NotFound
 from app.core.permissions import Role
-from app.modules.billing.models import Invoice
+from app.modules.billing.models import Invoice, InvoiceLine
 from app.modules.crm.models import Client
 from app.modules.identity.models import User
 from app.modules.projects.models import Project
@@ -229,6 +229,33 @@ def reject_proposal(
         reason=reason,
     )
     return proposal(db, user, proposal_id)
+
+
+def invoice_pdf_data(
+    db: Session, user: User, invoice_id: uuid.UUID
+) -> tuple[Invoice, Client, list[InvoiceLine]]:
+    cid, client = _context(db, user)
+    invoice = db.scalar(
+        select(Invoice).where(
+            Invoice.org_id == user.org_id,
+            Invoice.id == invoice_id,
+            Invoice.client_id == cid,
+            Invoice.status != "draft",
+        )
+    )
+    if invoice is None:
+        raise NotFound("Invoice not found")
+    lines = list(
+        db.scalars(
+            select(InvoiceLine)
+            .where(
+                InvoiceLine.org_id == user.org_id,
+                InvoiceLine.invoice_id == invoice.id,
+            )
+            .order_by(InvoiceLine.position, InvoiceLine.created_at)
+        )
+    )
+    return invoice, client, lines
 
 
 def invoices(db: Session, user: User) -> list[PortalInvoiceOut]:
