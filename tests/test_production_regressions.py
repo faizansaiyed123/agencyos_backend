@@ -8,6 +8,7 @@ from app.modules.crm import service as crm_service
 from app.modules.crm.deal_states import can_transition, is_terminal
 from app.modules.files.service import sanitize_filename
 from app.modules.identity import queries as identity_queries
+from app.modules.billing.pdf import render_invoice_pdf
 from app.modules.portal.service import _client_id
 from app.modules.proposals import service as proposal_service
 from app.platform.webhooks import validate_endpoint_url
@@ -169,3 +170,28 @@ def test_app_exposes_client_portal_routes() -> None:
     paths = {route.path for route in app.routes}
     assert "/api/v1/portal/overview" in paths
     assert "/api/v1/portal/proposals/{proposal_id}/accept" in paths
+
+
+def test_invoice_pdf_renderer_produces_pdf_bytes() -> None:
+    invoice = SimpleNamespace(
+        number="INV-2026-0001",
+        issue_date=None,
+        due_date=None,
+        currency="USD",
+        status="sent",
+        tax_rate_bps=0,
+        subtotal_cents=10000,
+        tax_cents=0,
+        total_cents=10000,
+        amount_paid_cents=0,
+        notes="Test invoice",
+    )
+    client = SimpleNamespace(name="Acme & Co.", website="https://example.test")
+    line = SimpleNamespace(
+        description="Design & implementation",
+        quantity="1",
+        unit_cents=10000,
+        amount_cents=10000,
+    )
+    pdf = render_invoice_pdf(invoice, client, [line])
+    assert pdf.startswith(b"%PDF-")
