@@ -11,7 +11,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.db import set_lookup_key
-from app.modules.identity.models import Invite, MfaRecoveryCode, Organization, RefreshToken, User
+from app.modules.identity.models import (
+    Invite,
+    MfaRecoveryCode,
+    Organization,
+    PasswordResetToken,
+    RefreshToken,
+    User,
+)
 
 
 def find_user_by_email_for_login(db: Session, email: str) -> User | None:
@@ -86,6 +93,24 @@ def find_live_family_tokens(
 def find_invite_by_token(db: Session, token_hash: str) -> Invite | None:
     set_lookup_key(db, token_hash)
     return db.scalar(select(Invite).where(Invite.token_hash == token_hash))
+
+
+def find_password_reset_token(
+    db: Session, token_hash: str, *, lock: bool = False
+) -> PasswordResetToken | None:
+    set_lookup_key(db, token_hash)
+    stmt = select(PasswordResetToken).where(PasswordResetToken.token_hash == token_hash)
+    if lock:
+        stmt = stmt.with_for_update()
+    return db.scalar(stmt)
+
+
+def revoke_live_password_reset_tokens(db: Session, org_id: uuid.UUID, user_id: uuid.UUID) -> None:
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.org_id == org_id,
+        PasswordResetToken.user_id == user_id,
+        PasswordResetToken.used_at.is_(None),
+    ).update({PasswordResetToken.used_at: func.now()}, synchronize_session=False)
 
 
 def find_pending_invite_by_email(db: Session, org_id: uuid.UUID, email: str) -> Invite | None:
