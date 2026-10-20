@@ -34,8 +34,6 @@ Current storage is filesystem-backed. Production needs a persistent volume or ob
 ### Billing completeness
 Refunds/credits and invoice PDF/email are not implemented.
 
-### Frontend resilience
-The fetch layer handles a single auth refresh but does not yet provide general safe-request timeout, transient retry, and explicit offline/reconnect state.
 
 ### Frontend automated testing
 Playwright is installed but there is no test script/configured CI job for browser tests.
