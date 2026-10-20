@@ -12,8 +12,8 @@ from app.core.errors import BusinessRuleViolation, Conflict, NotFound
 from app.core.pagination import Page, PageDep
 from app.core.permissions import Perm
 from app.modules.billing import service
-from app.modules.billing.pdf import render_invoice_pdf
 from app.modules.billing.models import Invoice
+from app.modules.billing.pdf import render_invoice_pdf
 from app.modules.billing.schemas import (
     InvoiceCreateRequest,
     InvoiceDetailOut,
@@ -169,7 +169,10 @@ def remove_line(
 def pdf(invoice_id: uuid.UUID, user: Reader, db: Db) -> Response:
     inv = service.get_invoice(db, user.org_id, invoice_id)
     if inv.status == "draft":
-        raise BusinessRuleViolation("Draft invoices cannot be downloaded as final PDFs", code="invoice_not_issued")
+        raise BusinessRuleViolation(
+            "Draft invoices cannot be downloaded as final PDFs",
+            code="invoice_not_issued",
+        )
     client = service.crm_queries.get_client(db, user.org_id, inv.client_id)
     if client is None:
         raise NotFound("Client not found")
