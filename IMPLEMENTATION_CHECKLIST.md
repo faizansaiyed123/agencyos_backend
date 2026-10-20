@@ -47,10 +47,10 @@ Legend: ✅ verified in source; ⚠️ implemented but execution not yet verifie
 - ✅ Clients, pipeline, proposals, projects, work, invoices, reports, team, settings, security.
 - ✅ Real API hooks and role-aware navigation.
 - ⚠️ Responsive/polish audit still required across every screen.
-- ⬜ Password reset UI/API.
+- ✅ Password reset UI/API.
 - ⬜ Functional client portal.
 - ⬜ Browser/unit test suite.
-- ⬜ Generic safe GET timeout/retry/offline UX.
+- ✅ Generic safe GET timeout/retry/offline UX.
 
 ## Documentation/deployment
 - ✅ Project master/status/checklist.
