@@ -74,6 +74,7 @@ def test_accept_proposal_commits_once_after_project_and_deal_work(
         deal_id="deal-1",
         client_id="client-1",
         title="Website",
+        currency="USD",
         accepted_at=None,
     )
     deal = SimpleNamespace(
