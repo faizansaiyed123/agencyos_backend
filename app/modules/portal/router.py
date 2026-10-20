@@ -64,7 +64,9 @@ def invoice_pdf(invoice_id: uuid.UUID, user: CurrentUser, db: Db) -> Response:
     return Response(
         content=render_invoice_pdf(invoice, client, lines),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{invoice.number or "invoice"}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{invoice.number or "invoice"}.pdf"',
+        },
     )
 
 
