@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.pagination import Page, PageDep
 from app.core.permissions import Perm
+from app.core.security import hash_token
 from app.modules.identity import queries, service
 from app.modules.identity.deps import CurrentUser, require
 from app.modules.identity.schemas import (
@@ -131,6 +132,12 @@ def password_forgot(
     enforce_rate_limit(
         db,
         key=f"account-recovery-ip:{_client_ip(request)}",
+        limit=settings.password_reset_rate_limit_per_hour,
+        window_seconds=3600,
+    )
+    enforce_rate_limit(
+        db,
+        key=f"account-recovery-email:{hash_token(body.email.lower())}",
         limit=settings.password_reset_rate_limit_per_hour,
         window_seconds=3600,
     )
