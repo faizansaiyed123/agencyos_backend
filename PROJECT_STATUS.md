@@ -52,11 +52,9 @@ No local test suite has been executed because repository cloning is blocked by t
 
 ## Significant incomplete/product gaps
 
-- Password-recovery workflow is referenced in the frontend README but no password-recovery UI/API was found.
 - Client role currently has no permissions and therefore has no functional client portal.
 - Production email delivery is not implemented; the current email abstraction is console/memory.
 - Invoice PDF rendering/emailing and payment reversal/credit-note flows are not implemented.
 - File storage is local disk only; an object-storage adapter is not implemented.
 - Frontend has no automated browser/unit test command despite Playwright being installed.
-- Frontend request handling lacks a general timeout/offline/retry layer for safe transient GETs.
 - CI runner execution still needs to be resolved and then rerun.
