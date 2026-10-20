@@ -39,7 +39,7 @@ class User(Base):
         UniqueConstraint("org_id", "id", name="uq_users_org_id_id"),  # target of composite FKs
         ForeignKeyConstraint(
             ["org_id", "client_id"], ["clients.org_id", "clients.id"],
-            name="fk_users_org_id_clients", ondelete="SET NULL",
+            name="fk_users_org_id_clients", ondelete="RESTRICT",
         ),
         CheckConstraint(_ROLE_CHECK, name="role_valid"),
         CheckConstraint("failed_login_count >= 0", name="failed_login_count_nonneg"),
@@ -127,7 +127,6 @@ class Invite(Base):
     client_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     email: Mapped[str] = mapped_column(String(320))
     role: Mapped[str] = mapped_column(String(32))
-    client_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     invited_by: Mapped[uuid.UUID] = mapped_column(Uuid)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
