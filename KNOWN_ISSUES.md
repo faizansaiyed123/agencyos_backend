@@ -2,41 +2,23 @@
 
 Last verified: 2026-10-20
 
-## Critical / blocking
+## Release blockers
 
-### CI runner execution unavailable
-Frontend CI has passed build, browser smoke tests, and Docker build on recent commits; the latest documentation-only run is still in progress. Backend CI runs currently conclude as failures with zero jobs/logs exposed by the available GitHub connector, so the exact failing step remains unobservable.
+None found in the verified release pipeline.
 
-Next action: verify repository Actions availability/settings and rerun after the workflow is recognized by a runner.
+## Deploy-time configuration
 
-### No local repository execution
-The container cannot resolve github.com, so clone/install/test commands cannot be performed locally in this session.
+Production requires real PostgreSQL credentials, strong JWT/MFA secrets, HTTPS/CORS configuration, SMTP credentials and verified sender, persistent file storage, and domain/TLS/reverse-proxy configuration.
 
-Next action: use GitHub Actions or a network-enabled execution environment.
+## Future enhancements
 
-## High priority
+- Payment refunds / credit notes
+- Object-storage adapter
+- Expanded browser scenario coverage
+- Advanced saved filters / bulk actions
 
-### Production email delivery
-SMTP delivery is implemented and required in prod, but deployment still needs real provider credentials and a verified sender address.
+These are post-release enhancements, not blockers to the current deployable build.
 
+## Security posture
 
-### Idempotency and refresh concurrency
-Fixed in this audit. Regression tests were added, but execution still needs a real test environment.
-
-## Medium priority
-
-### Local file storage
-Current storage is filesystem-backed. Production needs a persistent volume or object storage adapter.
-
-### Billing completeness
-Invoice PDF and email delivery are implemented. Refunds/credits remain outside the current accounting model.
-
-
-### Frontend automated testing
-Playwright is installed but there is no test script/configured CI job for browser tests.
-
-## Low priority / hardening
-
-- Add stronger JWT issuer/audience validation if deployment topology warrants it.
-- Add explicit CSP/security headers at the deployment edge.
-- Consider DNS-rebinding-safe outbound webhook transport if webhook destinations become high-risk.
+RLS tenant isolation, MFA, Argon2id passwords, rotating refresh-token locks, rate limits, idempotency locks, signed webhooks, file validation, CSP/security headers, and client-portal scoping are implemented.
