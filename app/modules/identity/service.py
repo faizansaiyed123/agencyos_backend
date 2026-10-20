@@ -290,7 +290,7 @@ def refresh_access_token(db: Session, *, raw_refresh_token: str) -> AuthResult:
     """Rotates the refresh token. If a token that was already rotated (or revoked) is
     presented again, the whole family is revoked — that is the signal of token theft."""
     digest = hash_token(raw_refresh_token)
-    token = queries.find_refresh_token_by_hash(db, digest)
+    token = queries.find_refresh_token_by_hash(db, digest, lock=True)
     if token is None:
         db.rollback()
         raise Unauthorized("Invalid refresh token", code="invalid_refresh_token")
