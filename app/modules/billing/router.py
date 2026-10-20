@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import JSONResponse, Response
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -12,7 +13,7 @@ from app.core.errors import BusinessRuleViolation, Conflict, NotFound
 from app.core.permissions import Perm
 from app.modules.billing import service
 from app.modules.billing.pdf import render_invoice_pdf
-from app.modules.billing.models import Invoice, InvoiceLine
+from app.modules.billing.models import Invoice
 from app.modules.billing.schemas import (
     InvoiceCreateRequest,
     InvoiceDetailOut,
@@ -29,6 +30,7 @@ from app.modules.billing.schemas import (
 )
 from app.modules.identity.deps import require
 from app.modules.identity.models import User
+from app.modules.crm.models import Contact
 from app.modules.time.models import amount_cents
 from app.platform import idempotency
 
@@ -201,6 +203,20 @@ def send_invoice(
     inv = service.get_invoice(db, user.org_id, invoice_id)
     if inv.status not in {"sent", "partially_paid", "paid"}:
         raise Conflict("Only issued invoices can be emailed", code="invoice_not_issued")
+    recipient = db.scalar(
+        select(Contact)
+        .where(
+            Contact.org_id == user.org_id,
+            Contact.client_id == inv.client_id,
+            Contact.email.is_not(None),
+        )
+        .order_by(Contact.is_primary.desc(), Contact.created_at)
+    )
+    if recipient is None or not recipient.email:
+        raise BusinessRuleViolation(
+            "Add a client contact email before sending an invoice",
+            code="client_email_missing",
+        )
 
     from app.platform import jobs
     jobs.enqueue(
