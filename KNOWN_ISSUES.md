@@ -5,7 +5,7 @@ Last verified: 2026-10-20
 ## Critical / blocking
 
 ### CI runner execution unavailable
-Frontend CI is executing and passing its production build. Backend CI runs are being created but currently conclude as failures, while the connected job/log APIs return no individual jobs, so the exact backend failing step is not yet observable through the available connector.
+Frontend CI has passed build, browser smoke tests, and Docker build on recent commits; the latest documentation-only run is still in progress. Backend CI runs currently conclude as failures with zero jobs/logs exposed by the available GitHub connector, so the exact failing step remains unobservable.
 
 Next action: verify repository Actions availability/settings and rerun after the workflow is recognized by a runner.
 
