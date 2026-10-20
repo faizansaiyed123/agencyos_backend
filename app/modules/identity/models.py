@@ -37,6 +37,10 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = (
         UniqueConstraint("org_id", "id", name="uq_users_org_id_id"),  # target of composite FKs
+        ForeignKeyConstraint(
+            ["org_id", "client_id"], ["clients.org_id", "clients.id"],
+            name="fk_users_org_id_clients", ondelete="SET NULL",
+        ),
         CheckConstraint(_ROLE_CHECK, name="role_valid"),
         CheckConstraint("failed_login_count >= 0", name="failed_login_count_nonneg"),
         # A user can never be MFA-enabled without a secret on file. Pending
@@ -54,6 +58,7 @@ class User(Base):
     org_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("organizations.id", ondelete="RESTRICT"), index=True
     )
+    client_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     email: Mapped[str] = mapped_column(String(320))
     password_hash: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(200))
@@ -102,6 +107,10 @@ class Invite(Base):
             ["org_id", "invited_by"], ["users.org_id", "users.id"], ondelete="RESTRICT",
             name="fk_invites_org_id_users",
         ),
+        ForeignKeyConstraint(
+            ["org_id", "client_id"], ["clients.org_id", "clients.id"], ondelete="RESTRICT",
+            name="fk_invites_org_id_clients",
+        ),
         CheckConstraint(_ROLE_CHECK, name="role_valid"),
         # At most one live invite per email per org; re-inviting revokes the older one.
         Index(
@@ -115,8 +124,10 @@ class Invite(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     org_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("organizations.id"), index=True)
+    client_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     email: Mapped[str] = mapped_column(String(320))
     role: Mapped[str] = mapped_column(String(32))
+    client_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     invited_by: Mapped[uuid.UUID] = mapped_column(Uuid)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
