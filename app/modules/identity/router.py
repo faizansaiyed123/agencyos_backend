@@ -222,7 +222,12 @@ def create_invite(
             return JSONResponse(status_code=replay.status, content=replay.body)
 
     invite, _raw_token = service.create_invite(
-        db, org_id=user.org_id, invited_by=user.id, email=body.email, role=body.role
+        db,
+        org_id=user.org_id,
+        invited_by=user.id,
+        email=body.email,
+        role=body.role,
+        commit=not bool(idempotency_key),
     )
     # In production the raw token is emailed to the invitee, not returned in the API
     # response; the console email backend (dev only) logs it instead (see app.platform.email).
