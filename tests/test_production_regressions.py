@@ -4,11 +4,11 @@ from unittest.mock import Mock
 import pytest
 
 from app.core.errors import BusinessRuleViolation, Forbidden
+from app.modules.billing.pdf import render_invoice_pdf
 from app.modules.crm import service as crm_service
 from app.modules.crm.deal_states import can_transition, is_terminal
 from app.modules.files.service import sanitize_filename
 from app.modules.identity import queries as identity_queries
-from app.modules.billing.pdf import render_invoice_pdf
 from app.modules.portal.service import _client_id
 from app.modules.proposals import service as proposal_service
 from app.platform.webhooks import validate_endpoint_url
