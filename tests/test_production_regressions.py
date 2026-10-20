@@ -35,7 +35,9 @@ def test_deal_state_machine_has_no_skipping() -> None:
     assert is_terminal("lost")
 
 
-def test_deal_mutators_can_participate_in_an_outer_transaction(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_deal_mutators_can_participate_in_an_outer_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     db = FakeDb()
     deal = SimpleNamespace(id="deal-1", stage="qualified", value_amount=100)
     monkeypatch.setattr(crm_service, "set_org_context", lambda *_args: None)
@@ -60,7 +62,9 @@ def test_deal_mutators_can_participate_in_an_outer_transaction(monkeypatch: pyte
     assert db.commits == 0
 
 
-def test_accept_proposal_commits_once_after_project_and_deal_work(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_accept_proposal_commits_once_after_project_and_deal_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     db = FakeDb()
     proposal = SimpleNamespace(
         id="proposal-1",
@@ -70,7 +74,9 @@ def test_accept_proposal_commits_once_after_project_and_deal_work(monkeypatch: p
         title="Website",
         accepted_at=None,
     )
-    deal = SimpleNamespace(id="deal-1", client_id="client-1", stage="qualified", owner_user_id="user-1")
+    deal = SimpleNamespace(
+        id="deal-1", client_id="client-1", stage="qualified", owner_user_id="user-1"
+    )
 
     monkeypatch.setattr(proposal_service, "set_org_context", lambda *_args: None)
     monkeypatch.setattr(proposal_service.queries, "get_proposal", lambda *_args: proposal)
