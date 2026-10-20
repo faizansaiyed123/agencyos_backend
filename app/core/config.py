@@ -60,7 +60,13 @@ class Settings(BaseSettings):
     storage_dir: str = "./var/files"
     max_upload_bytes: int = 20 * 1024 * 1024
 
-    email_backend: Literal["console", "memory"] = "console"
+    email_backend: Literal["console", "memory", "smtp"] = "console"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_from_email: str = "noreply@agencyos.local"
+    smtp_starttls: bool = True
     app_base_url: str = "http://localhost:5173"
 
     @model_validator(mode="after")
@@ -75,6 +81,12 @@ class Settings(BaseSettings):
                 )
             if not self.cookie_secure:
                 raise ValueError("AGENCYOS_COOKIE_SECURE must be true in prod")
+            if self.email_backend != "smtp":
+                raise ValueError("AGENCYOS_EMAIL_BACKEND must be smtp in prod")
+            if not self.smtp_host:
+                raise ValueError("AGENCYOS_SMTP_HOST must be set in prod")
+            if self.smtp_username and not self.smtp_password:
+                raise ValueError("AGENCYOS_SMTP_PASSWORD is required when SMTP username is set")
         return self
 
 
