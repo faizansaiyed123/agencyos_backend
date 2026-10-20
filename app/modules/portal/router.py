@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.modules.identity.deps import CurrentUser
 from app.modules.billing.pdf import render_invoice_pdf
+from app.modules.identity.deps import CurrentUser
 from app.modules.portal import service
 from app.modules.portal.schemas import (
     PortalInvoiceOut,
@@ -56,8 +56,6 @@ def reject_proposal(
     db: Db,
 ) -> PortalProposalDetailOut:
     return service.reject_proposal(db, user, proposal_id, body.reason)
-
-
 
 
 @router.get("/invoices/{invoice_id}/pdf")
