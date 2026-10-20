@@ -7,7 +7,7 @@ Last verified: 2026-10-20
 GitHub access is verified for both repositories with admin/maintain/push permissions on `main`.
 
 Current heads:
-- Frontend: `60c3eb1ce1622d1be1a6fd31569f69e7a1e57810`
+- Frontend: `9cc8899f8e2eee9bbed745a4802a24b446ba9349`
 - Backend: current head is the latest commit on `main`; this file is refreshed at the end of each checkpoint.
 
 Local repository execution is not available in this session because the container cannot resolve github.com. GitHub source inspection and writes are available.
@@ -48,7 +48,7 @@ Backend:
 
 ## Not yet verified
 
-No local test suite has been executed because repository cloning is blocked by the environment's network/DNS. Frontend GitHub Actions has successfully executed the production build. Backend workflow runs are currently concluding as failures; the connected GitHub job/log APIs are not exposing the individual job details, so the exact failing step still needs to be recovered.
+No local test suite has been executed because repository cloning is blocked by the environment's network/DNS. Frontend GitHub Actions has successfully executed build, Playwright smoke tests, and Docker build on recent commits; the latest documentation-only run is still in progress.
 
 ## Significant incomplete/product gaps
 
