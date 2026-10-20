@@ -25,5 +25,19 @@ def _send_invite_email(payload: dict[str, Any], _db: Session) -> None:
     )
 
 
+def _send_password_reset_email(payload: dict[str, Any], _db: Session) -> None:
+    send_email(
+        to=payload["email"],
+        subject="Reset your AgencyOS password",
+        body=(
+            "A password reset was requested for your AgencyOS account.\n\n"
+            f"Reset your password: {payload['reset_url']}\n\n"
+            "This link is single-use and expires shortly. If you did not request it, "
+            "you can safely ignore this message."
+        ),
+    )
+
+
 def register() -> None:
     jobs.register_handler("send_invite_email", _send_invite_email)
+    jobs.register_handler("send_password_reset_email", _send_password_reset_email)
