@@ -2,64 +2,42 @@
 
 Last verified: 2026-10-20
 
-## Repositories
+## Frontend
+React 18 + TypeScript + Vite 6, React Router 7.18.4, TanStack Query, Playwright, Nginx production proxy.
 
-### Frontend
-React/TypeScript/Vite application.
-- Entry: `src/main.tsx`
-- Routing: `src/App.tsx`
-- Auth state: `src/auth/AuthContext.tsx`
-- API transport: `src/api/client.ts`
-- API hooks/types: `src/api/hooks.ts`, `src/api/types.ts`
-- Shared UI: `src/components/*`
-- Pages: `src/pages/*`
-
-### Backend
-FastAPI application.
-- Entry: `app/main.py`
-- Core auth/security/db/config/errors: `app/core/*`
-- Business modules: `app/modules/*`
-- Platform services: `app/platform/*`
-- Worker: `app/worker.py`
-- Migrations: `migrations/versions/*`
+## Backend
+Python 3.12, FastAPI, SQLAlchemy 2, PostgreSQL/Alembic, RLS, MFA, rotating refresh tokens, jobs/outbox, SSE, webhooks, reporting, client portal and billing PDF/email.
 
 ## Frontend routes
 
-`/`, `/login`, `/signup`, `/accept-invite`, `/clients`, `/clients/:id`, `/deals`, `/deals/:id`, `/proposals`, `/proposals/:id`, `/projects`, `/projects/:id`, `/work`, `/invoices`, `/invoices/:id`, `/reports`, `/team`, `/settings`, `/security`.
+/login, /signup, /forgot-password, /reset-password, /accept-invite, /portal, /clients, /deals, /proposals, /projects, /work, /invoices, /reports, /team, /settings, /security.
 
-## Backend API groups
+## Backend API
 
-All application routes are under `/api/v1`.
+All application routes are under /api/v1.
 
-- Identity: `/auth/*` (including `/auth/password/forgot` and `/auth/password/reset`), `/users`, `/invites*`
-- CRM: `/clients*`, `/contacts*`, `/deals*`
-- Proposals: `/proposals*`, `/proposal-items*`
-- Projects: `/projects*`, `/tasks*`, `/milestones*`
-- Time: `/timer/*`, `/time/*`
-- Billing: `/invoices*`
-- Collaboration: `/comments*`, `/approvals*`, `/notifications*`
-- Files: `/files*`
-- Reporting: `/reports/*`
-- Search: `/search`, `/assistant/ask`
-- Privacy: `/privacy/*`
-- Feature flags: `/flags*`
-- Webhooks: `/webhooks*`
-- Ops: `/healthz`, `/readyz`
+- Identity: /auth/*, /users, /invites*
+- Client portal: /portal/overview, /portal/projects, /portal/proposals*, /portal/invoices*
+- CRM: /clients*, /contacts*, /deals*
+- Proposals: /proposals*, /proposal-items*
+- Projects: /projects*, /tasks*, /milestones*
+- Time: /timer/*, /time/*
+- Billing: /invoices* including PDF download and queued email
+- Collaboration: /comments*, /approvals*, /notifications*
+- Files: /files*
+- Reporting: /reports/*
+- Search: /search, /assistant/ask
+- Privacy: /privacy/*
+- Flags: /flags*
+- Webhooks: /webhooks*
+- Ops: /healthz, /readyz
 
-## Core security flow
+## Security model
 
-1. Browser receives short-lived access token in memory.
-2. Refresh token is kept in an httpOnly cookie.
-3. API validates bearer token and resolves the user/org from the database.
-4. Server-side permissions are enforced by dependencies.
-5. PostgreSQL RLS enforces tenant isolation.
-6. Mutating workflows use transactions; idempotent endpoints use a transaction-level lock and persist the cached response with the business change.
+Access tokens are short-lived and held in memory. Refresh tokens use httpOnly cookies. Server permissions are authoritative. PostgreSQL RLS supplies tenant isolation. Mutating business workflows use transaction boundaries, and idempotent endpoints serialize concurrent keys.
 
-## Key cross-module transaction
+Client portal queries constrain both org and client account.
 
-Proposal acceptance:
-proposal -> project creation -> deal value sync -> deal stage transitions -> single commit.
+## Production topology
 
-## Integration contract
-
-The frontend uses `/api/v1` from the same origin and relies on the backend's problem+json error contract. Production should place frontend and API behind a shared origin/reverse proxy; the frontend Docker image provides an Nginx `/api/` proxy for this topology. Cross-origin deployment requires deliberate CORS/cookie policy configuration.
+Frontend Nginx serves the SPA and proxies /api/* to the backend. The backend and worker run separately from PostgreSQL. SMTP is required in production for invites, password recovery, and invoice delivery.
