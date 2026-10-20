@@ -10,7 +10,7 @@ Run the frontend and backend behind the same public origin when possible.
 - Worker container: python -m app.worker
 - PostgreSQL: managed PostgreSQL or the supplied development container
 - File storage: persistent volume for small/self-hosted deployments; object storage adapter remains a future hardening item
-- SMTP: required in production for transactional email
+- SMTP: required in production for transactional email, including password resets, invites, and invoice PDFs
 
 The frontend API client already targets /api/v1, so same-origin proxying keeps the refresh cookie and API requests on one site.
 
@@ -40,6 +40,12 @@ Run migrations with the schema-owner connection:
 alembic upgrade head
 
 The runtime role is deliberately non-owner and RLS-protected. Never run the application as the migration/schema-owner role.
+
+## Billing and client portal
+
+- Issued invoices can be downloaded as PDFs and queued for email delivery.
+- Client users receive access through client-linked invites and the scoped client portal.
+- The standalone worker must register and process the billing email job; the shipped worker does this automatically.
 
 ## Worker
 
