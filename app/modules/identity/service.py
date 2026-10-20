@@ -435,9 +435,14 @@ def create_invite(
     invited_by: uuid.UUID,
     email: str,
     role: str,
+    client_id: uuid.UUID | None = None,
     commit: bool = True,
 ) -> tuple[Invite, str]:
     set_org_context(db, org_id)
+    if role == Role.CLIENT.value and client_id is None:
+        raise Conflict("Client invites must be linked to a client", code="client_link_required")
+    if role != Role.CLIENT.value and client_id is not None:
+        raise Conflict("Only client invites can be linked to a client", code="invalid_client_link")
     existing = queries.find_pending_invite_by_email(db, org_id, email.lower())
     if existing is not None:
         existing.revoked_at = utcnow()
@@ -448,6 +453,7 @@ def create_invite(
         org_id=org_id,
         email=email.lower(),
         role=role,
+        client_id=client_id,
         token_hash=digest,
         invited_by=invited_by,
         expires_at=utcnow() + timedelta(days=settings.invite_ttl_days),
@@ -507,6 +513,7 @@ def accept_invite(db: Session, *, raw_token: str, full_name: str, password: str)
         password_hash=hash_password(password),
         full_name=full_name,
         role=invite.role,
+        client_id=invite.client_id,
     )
     db.add(user)
     try:
@@ -555,6 +562,8 @@ def change_user_role(
         raise Forbidden("Only an owner or admin can change roles")
     if new_role not in {r.value for r in Role}:
         raise Conflict("Invalid role", code="invalid_role")
+    if new_role == Role.CLIENT.value:
+        raise Forbidden("Client access must be created through a client invite")
 
     set_org_context(db, org_id)
     target = queries.get_user(db, org_id, target_user_id)
@@ -571,6 +580,8 @@ def change_user_role(
         raise Forbidden("Only an owner can grant the owner role")
 
     target.role = new_role
+    if new_role != Role.CLIENT.value:
+        target.client_id = None
     record_audit(
         db, org_id=org_id, actor_user_id=actor.id, action="user.role_changed",
         entity_type="user", entity_id=target.id, data={"new_role": new_role},
