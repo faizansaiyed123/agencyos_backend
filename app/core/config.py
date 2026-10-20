@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     access_token_ttl_minutes: int = 15
     refresh_token_ttl_days: int = 30
     invite_ttl_days: int = 7
+    password_reset_ttl_minutes: int = 30
+    password_reset_rate_limit_per_hour: int = 5
     mfa_pending_token_ttl_minutes: int = 5
 
     # Fernet key (32 url-safe base64 bytes) for encrypting TOTP seeds at rest.
