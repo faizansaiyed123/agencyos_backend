@@ -10,9 +10,6 @@ from app.core.permissions import Role
 from app.modules.billing.models import Invoice, InvoiceLine
 from app.modules.crm.models import Client
 from app.modules.identity.models import User
-from app.modules.projects.models import Project
-from app.modules.proposals import service as proposal_service
-from app.modules.proposals.models import Proposal, ProposalItem
 from app.modules.portal.schemas import (
     PortalClientOut,
     PortalInvoiceOut,
