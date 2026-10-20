@@ -268,6 +268,7 @@ def accept_proposal(
                 lost_reason=None, note=note, commit=False,
             )  # fmt: skip
 
+    db.commit()
     return proposal
 
 
