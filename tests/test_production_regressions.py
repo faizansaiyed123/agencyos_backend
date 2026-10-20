@@ -77,7 +77,11 @@ def test_accept_proposal_commits_once_after_project_and_deal_work(
         accepted_at=None,
     )
     deal = SimpleNamespace(
-        id="deal-1", client_id="client-1", stage="qualified", owner_user_id="user-1"
+        id="deal-1",
+        client_id="client-1",
+        stage="qualified",
+        owner_user_id="user-1",
+        title="Website",
     )
 
     monkeypatch.setattr(proposal_service, "set_org_context", lambda *_args: None)
@@ -152,7 +156,7 @@ def test_webhooks_reject_private_ip_literals() -> None:
 def test_app_imports_with_declared_runtime_dependencies() -> None:
     from app.main import app
 
-    paths = {route.path for route in app.routes}
+    paths = set(app.openapi()["paths"])
     assert "/healthz" in paths
     assert "/api/v1/auth/login" in paths
     assert "/api/v1/auth/password/forgot" in paths
@@ -167,7 +171,7 @@ def test_client_portal_requires_an_explicit_client_link() -> None:
 def test_app_exposes_client_portal_routes() -> None:
     from app.main import app
 
-    paths = {route.path for route in app.routes}
+    paths = set(app.openapi()["paths"])
     assert "/api/v1/portal/overview" in paths
     assert "/api/v1/portal/proposals/{proposal_id}/accept" in paths
 
