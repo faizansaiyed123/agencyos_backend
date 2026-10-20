@@ -109,7 +109,7 @@ def signup_organization(
     return AuthResult(user, access_token, expires_in, refresh_token)
 
 
-def request_password_reset(db: Session, *, email: str) -> str | None:
+def request_password_reset(db: Session, *, email: str) -> None:
     """Create a single-use password-reset token for an active user.
     Returns the raw token only to the caller so the email job can deliver it; the
     token itself is stored only as a hash. The public endpoint must return the
@@ -119,7 +119,7 @@ def request_password_reset(db: Session, *, email: str) -> str | None:
     user = queries.find_user_by_email_for_login(db, normalized)
     if user is None or not user.is_active:
         db.rollback()
-        return None
+        return
 
     set_org_context(db, user.org_id)
     queries.revoke_live_password_reset_tokens(db, user.org_id, user.id)
