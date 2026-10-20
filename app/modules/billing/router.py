@@ -206,6 +206,7 @@ def pay(
         paid_on=body.paid_on,
         method=body.method,
         reference=body.reference,
+        commit=not bool(idempotency_key),
     )
     out = PaymentOut.model_validate(payment)
     if idempotency_key and fp:
