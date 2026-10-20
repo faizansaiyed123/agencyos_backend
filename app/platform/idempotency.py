@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ForeignKeyConstraint, Integer, String, UniqueConstraint, Uuid, select
+from sqlalchemy import ForeignKeyConstraint, Integer, String, UniqueConstraint, Uuid, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -76,6 +76,13 @@ def check_idempotency_key(db: Session, *, org_id: uuid.UUID, key: str, request_f
     reset the session-local `app.org_id` GUC.
     """
     set_org_context(db, org_id)
+    # Serialize requests reusing the same key for the duration of the transaction.
+    # This is deliberately a transaction-level advisory lock: it releases only when
+    # the business mutation and its cached response are committed together.
+    db.execute(
+        text("SELECT pg_advisory_xact_lock(hashtextextended(:lock_key, 0))"),
+        {"lock_key": f"{org_id}:{key}"},
+    )
     existing = db.scalar(
         select(IdempotencyKey).where(IdempotencyKey.org_id == org_id, IdempotencyKey.key == key)
     )
