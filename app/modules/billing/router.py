@@ -3,14 +3,16 @@ from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.pagination import Page, PageDep
+from app.core.errors import BusinessRuleViolation, Conflict, NotFound
 from app.core.permissions import Perm
 from app.modules.billing import service
-from app.modules.billing.models import Invoice
+from app.modules.billing.pdf import render_invoice_pdf
+from app.modules.billing.models import Invoice, InvoiceLine
 from app.modules.billing.schemas import (
     InvoiceCreateRequest,
     InvoiceDetailOut,
@@ -159,6 +161,71 @@ def remove_line(
         db, org_id=user.org_id, actor_id=user.id, invoice_id=invoice_id, line_id=line_id
     )
     return _detail(db, service.get_invoice(db, user.org_id, invoice_id))
+
+
+@router.get("/invoices/{invoice_id}/pdf")
+def pdf(invoice_id: uuid.UUID, user: Reader, db: Db) -> Response:
+    inv = service.get_invoice(db, user.org_id, invoice_id)
+    if inv.status == "draft":
+        raise BusinessRuleViolation("Draft invoices cannot be downloaded as final PDFs", code="invoice_not_issued")
+    client = service.crm_queries.get_client(db, user.org_id, inv.client_id)
+    if client is None:
+        raise NotFound("Client not found")
+    lines = service.lines_of(db, user.org_id, inv.id)
+    content = render_invoice_pdf(inv, client, lines)
+    filename = f"{inv.number or 'invoice'}.pdf"
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/invoices/{invoice_id}/send", status_code=202)
+def send_invoice(
+    invoice_id: uuid.UUID,
+    user: Manager,
+    db: Db,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> dict[str, str] | JSONResponse:
+    fp = None
+    if idempotency_key:
+        fp = idempotency.fingerprint("POST", f"/invoices/{invoice_id}/send", b"")
+        try:
+            idempotency.check_idempotency_key(
+                db, org_id=user.org_id, key=idempotency_key, request_fp=fp
+            )
+        except idempotency.IdempotencyReplay as replay:
+            return JSONResponse(status_code=replay.status, content=replay.body)
+
+    inv = service.get_invoice(db, user.org_id, invoice_id)
+    if inv.status not in {"sent", "partially_paid", "paid"}:
+        raise Conflict("Only issued invoices can be emailed", code="invoice_not_issued")
+
+    from app.modules.billing import jobs as billing_jobs
+    from app.platform import jobs
+
+    db.flush()
+    jobs.enqueue(
+        db,
+        job_type="send_invoice_email",
+        org_id=user.org_id,
+        payload={"org_id": str(user.org_id), "invoice_id": str(invoice_id)},
+    )
+    body = {"message": "Invoice email queued."}
+    if idempotency_key and fp:
+        idempotency.store_idempotency_result(
+            db,
+            org_id=user.org_id,
+            user_id=user.id,
+            key=idempotency_key,
+            request_fp=fp,
+            status=202,
+            body=body,
+        )
+    db.commit()
+    billing_jobs.register()
+    return body
 
 
 @router.post("/invoices/{invoice_id}/issue", response_model=InvoiceOut)
