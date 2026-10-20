@@ -19,9 +19,6 @@ Next action: use GitHub Actions or a network-enabled execution environment.
 ### Production email delivery
 SMTP delivery is implemented and required in prod, but deployment still needs real provider credentials and a verified sender address.
 
-### Client role has no product workflow
-The role exists but the permission matrix is empty. This means a client account does not currently have a usable portal.
-
 
 ### Idempotency and refresh concurrency
 Fixed in this audit. Regression tests were added, but execution still needs a real test environment.
@@ -32,7 +29,7 @@ Fixed in this audit. Regression tests were added, but execution still needs a re
 Current storage is filesystem-backed. Production needs a persistent volume or object storage adapter.
 
 ### Billing completeness
-Refunds/credits and invoice PDF/email are not implemented.
+Invoice PDF and email delivery are implemented. Refunds/credits remain outside the current accounting model.
 
 
 ### Frontend automated testing
