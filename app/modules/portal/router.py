@@ -6,10 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.modules.identity.deps import CurrentUser
-from app.core.errors import BusinessRuleViolation, NotFound
 from app.modules.billing.pdf import render_invoice_pdf
-from app.modules.billing.models import Invoice
-from app.modules.crm.models import Client
 from app.modules.portal import service
 from app.modules.portal.schemas import (
     PortalInvoiceOut,
@@ -65,18 +62,7 @@ def reject_proposal(
 
 @router.get("/invoices/{invoice_id}/pdf")
 def invoice_pdf(invoice_id: uuid.UUID, user: CurrentUser, db: Db) -> Response:
-    cid, client = service._context(db, user)
-    invoice = db.scalar(
-        select(Invoice).where(
-            Invoice.org_id == user.org_id,
-            Invoice.id == invoice_id,
-            Invoice.client_id == cid,
-            Invoice.status != "draft",
-        )
-    )
-    if invoice is None:
-        raise NotFound("Invoice not found")
-    lines = service.db_lines_for_invoice(db, user.org_id, invoice.id)
+    invoice, client, lines = service.invoice_pdf_data(db, user, invoice_id)
     return Response(
         content=render_invoice_pdf(invoice, client, lines),
         media_type="application/pdf",
