@@ -6,13 +6,27 @@ password-recovery, and other account messages can actually reach users.
 
 import smtplib
 from email.message import EmailMessage
+from typing import TypedDict
 
 from app.core.config import get_settings
+
+class Attachment(TypedDict):
+    filename: str
+    data: bytes
+    maintype: str
+    subtype: str
+
 
 _sent: list[dict[str, str]] = []
 
 
-def send_email(*, to: str, subject: str, body: str) -> None:
+def send_email(
+    *,
+    to: str,
+    subject: str,
+    body: str,
+    attachments: list[Attachment] | None = None,
+) -> None:
     settings = get_settings()
     if settings.email_backend == "memory":
         _sent.append({"to": to, "subject": subject, "body": body})
@@ -29,6 +43,13 @@ def send_email(*, to: str, subject: str, body: str) -> None:
     message["To"] = to
     message["Subject"] = subject
     message.set_content(body)
+    for attachment in attachments or []:
+        message.add_attachment(
+            attachment["data"],
+            maintype=attachment["maintype"],
+            subtype=attachment["subtype"],
+            filename=attachment["filename"],
+        )
 
     with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as smtp:
         smtp.ehlo()
