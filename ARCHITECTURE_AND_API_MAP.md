@@ -31,7 +31,7 @@ FastAPI application.
 
 All application routes are under `/api/v1`.
 
-- Identity: `/auth/*`, `/users`, `/invites*`
+- Identity: `/auth/*` (including `/auth/password/forgot` and `/auth/password/reset`), `/users`, `/invites*`
 - CRM: `/clients*`, `/contacts*`, `/deals*`
 - Proposals: `/proposals*`, `/proposal-items*`
 - Projects: `/projects*`, `/tasks*`, `/milestones*`
@@ -62,4 +62,4 @@ proposal -> project creation -> deal value sync -> deal stage transitions -> sin
 
 ## Integration contract
 
-The frontend uses `/api/v1` from the same origin and relies on the backend's problem+json error contract. Production should place frontend and API behind a shared origin/reverse proxy or otherwise configure CORS and secure cookies consistently.
+The frontend uses `/api/v1` from the same origin and relies on the backend's problem+json error contract. Production should place frontend and API behind a shared origin/reverse proxy; the frontend Docker image provides an Nginx `/api/` proxy for this topology. Cross-origin deployment requires deliberate CORS/cookie policy configuration.
