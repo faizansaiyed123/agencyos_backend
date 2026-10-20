@@ -299,7 +299,13 @@ def update_deal(
 
 
 def set_deal_value(
-    db: Session, *, org_id: uuid.UUID, actor_id: uuid.UUID, deal_id: uuid.UUID, value_amount: int
+    db: Session,
+    *,
+    org_id: uuid.UUID,
+    actor_id: uuid.UUID,
+    deal_id: uuid.UUID,
+    value_amount: int,
+    commit: bool = True,
 ) -> Deal:
     """Narrow, dedicated entry point for other modules (proposals, when a
     proposal is accepted) to update a deal's value without reaching into the
@@ -317,7 +323,9 @@ def set_deal_value(
         db, org_id=org_id, actor_user_id=actor_id, action="deal.value_synced",
         entity_type="deal", entity_id=deal.id, data={"value_amount": value_amount},
     )  # fmt: skip
-    db.commit()
+    db.flush()
+    if commit:
+        db.commit()
     return deal
 
 
@@ -330,6 +338,7 @@ def change_deal_stage(
     to_stage: str,
     lost_reason: str | None,
     note: str | None,
+    commit: bool = True,
 ) -> Deal:
     if not is_valid_stage(to_stage):
         raise BusinessRuleViolation(f"Invalid stage: {to_stage}", code="invalid_stage")
@@ -371,5 +380,7 @@ def change_deal_stage(
         db, org_id=org_id, actor_user_id=actor_id, action="deal.stage_changed",
         entity_type="deal", entity_id=deal.id, data={"from": from_stage, "to": to_stage},
     )  # fmt: skip
-    db.commit()
+    db.flush()
+    if commit:
+        db.commit()
     return deal
