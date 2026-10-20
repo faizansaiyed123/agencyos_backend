@@ -19,6 +19,9 @@ from app.modules.portal.schemas import (
     PortalProposalItemOut,
     PortalProposalOut,
 )
+from app.modules.projects.models import Project
+from app.modules.proposals import service as proposal_service
+from app.modules.proposals.models import Proposal, ProposalItem
 
 
 def _client_id(user: User) -> uuid.UUID:
