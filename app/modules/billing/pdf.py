@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date
 from io import BytesIO
-from typing import Iterable
 from xml.sax.saxutils import escape
 
 from reportlab.lib import colors
