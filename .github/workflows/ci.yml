@@ -27,3 +27,5 @@ jobs:
         run: python -c "from app.main import app; print(f'AgencyOS routes: {len(app.routes)}')"
       - name: Tests
         run: pytest
+      - name: Docker build
+        run: docker build --tag agencyos-backend:ci .
