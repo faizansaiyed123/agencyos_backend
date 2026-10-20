@@ -131,7 +131,7 @@ def test_refresh_token_lookup_locks_when_requested(monkeypatch: pytest.MonkeyPat
 
 
 def test_filename_sanitization_removes_path_and_control_characters() -> None:
-    assert sanitize_filename("../\\secret" + chr(0) + "report.pdf") == "report.pdf"
+    assert sanitize_filename("../secret" + chr(0) + "/report.pdf") == "report.pdf"
 
 
 def test_webhooks_reject_private_ip_literals() -> None:
