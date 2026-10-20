@@ -24,6 +24,7 @@ Legend: ✅ verified in source; ⚠️ implemented but execution not yet verifie
 - ✅ Feature flags.
 - ✅ Privacy export/erasure.
 - ✅ OpenTelemetry integration.
+- ✅ Baseline security response headers.
 - ✅ Runtime dependency declaration corrected.
 - ✅ Refresh-token concurrency fixed in source.
 - ✅ Idempotency concurrency fixed in source.
@@ -58,9 +59,10 @@ Legend: ✅ verified in source; ⚠️ implemented but execution not yet verifie
 - ✅ Architecture/API map.
 - ✅ Known issues and recovery docs.
 - ✅ Feature roadmap.
-- ⚠️ CI definitions added.
+- ✅ CI definitions added.
+- ✅ Backend/frontend Docker images and deployment docs added.
 - ⬜ CI green with actual runner output.
-- ⬜ Docker/production deployment verification.
+- ⚠️ Docker/production configuration added; clean-environment execution still pending.
 - ⬜ Clean-environment setup verification.
 
 ## Final verification
