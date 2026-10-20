@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from app.core.errors import BusinessRuleViolation
+from app.core.errors import BusinessRuleViolation, Forbidden
 from app.modules.crm import service as crm_service
 from app.modules.crm.deal_states import can_transition, is_terminal
 from app.modules.files.service import sanitize_filename
@@ -159,7 +159,7 @@ def test_app_imports_with_declared_runtime_dependencies() -> None:
 
 
 def test_client_portal_requires_an_explicit_client_link() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(Forbidden):
         _client_id(SimpleNamespace(role="client", client_id=None))
 
 
