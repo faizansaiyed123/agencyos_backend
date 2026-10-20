@@ -131,3 +131,14 @@ class MfaStatusOut(BaseModel):
     mfa_enabled: bool
     enrolled_at: datetime | None
     recovery_codes_remaining: int
+
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=500)
+    password: str
+    _check_password = field_validator("password")(_validate_password_strength)
