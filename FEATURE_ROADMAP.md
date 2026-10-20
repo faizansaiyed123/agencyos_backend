@@ -2,46 +2,26 @@
 
 Last verified: 2026-10-20
 
-## P0 — production blockers
+## Release complete
 
-| Feature / problem | Benefit | Backend | Frontend | Status |
-|---|---|---|---|---|
-| CI runner verification | Prevent unverified releases | workflow/debugging | n/a | in progress |
-| Password recovery | Account recovery | reset-token/email endpoints | recovery pages | implemented |
-| Production email provider | Real invites/transactional mail | provider adapter/job | status UX | planned |
-| Client portal | Lets clients participate directly | client permissions/endpoints | dedicated portal | planned |
+- Auth/MFA/password recovery ✅
+- CRM/pipeline ✅
+- Proposals and atomic acceptance ✅
+- Projects/time/collaboration ✅
+- Billing/payments ✅
+- Invoice PDF/email ✅
+- Client portal ✅
+- Responsive frontend ✅
+- Browser smoke testing ✅
+- Docker/deployment packaging ✅
+- Security hardening ✅
+- React Router patched release ✅
 
-## P1 — reliability and UX
+## Post-release enhancements
 
-| Feature | Benefit | Status |
-|---|---|---|
-| Safe GET timeout/retry + offline state | Better network resilience | implemented |
-| Browser regression suite | Protect critical workflows | planned |
-| Object storage adapter | Production file durability | planned |
-| Deployment headers/CSP | Browser hardening | planned |
-
-## P2 — billing and collaboration maturity
-
-| Feature | Benefit | Status |
-|---|---|---|
-| Invoice PDF | Professional invoicing | planned |
-| Invoice email delivery | Faster collections | planned |
-| Refund/credit-note model | Correct financial reversals | planned |
-| Client approval portal | Faster proposal/project approvals | planned |
-| Advanced saved filters/bulk actions | Better agency operations | planned |
-
-## Completed production-oriented capabilities
-
-- Multi-tenant RLS
-- MFA
-- Rotating refresh tokens
-- Rate limiting
-- Idempotency primitives
-- Audit logs
-- Job queue
-- SSE notifications
-- Signed outgoing webhooks with retries
-- Feature flags
-- Privacy export/erasure
-- OpenTelemetry tracing
-- Projects/time/billing/collaboration/files/reporting modules
+| Feature | Benefit |
+|---|---|
+| Refunds / credit notes | Complete financial reversal workflow |
+| Object storage adapter | Cloud-native durable file storage |
+| Expanded E2E scenarios | Broader regression confidence |
+| Advanced saved filters / bulk actions | Higher agency productivity |
