@@ -147,3 +147,5 @@ def test_app_imports_with_declared_runtime_dependencies() -> None:
     paths = {route.path for route in app.routes}
     assert "/healthz" in paths
     assert "/api/v1/auth/login" in paths
+    assert "/api/v1/auth/password/forgot" in paths
+    assert "/api/v1/auth/password/reset" in paths
