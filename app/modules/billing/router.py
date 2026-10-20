@@ -202,10 +202,7 @@ def send_invoice(
     if inv.status not in {"sent", "partially_paid", "paid"}:
         raise Conflict("Only issued invoices can be emailed", code="invoice_not_issued")
 
-    from app.modules.billing import jobs as billing_jobs
     from app.platform import jobs
-
-    db.flush()
     jobs.enqueue(
         db,
         job_type="send_invoice_email",
@@ -224,7 +221,6 @@ def send_invoice(
             body=body,
         )
     db.commit()
-    billing_jobs.register()
     return body
 
 
