@@ -9,9 +9,6 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,3 +20,6 @@ jobs:
       - name: Ruff
         run: ruff check .
       - name: Import application
+        run: python -c "from app.main import app; print(f'AgencyOS routes: {len(app.routes)}')"
+      - name: Tests
+        run: pytest
