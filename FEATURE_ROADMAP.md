@@ -7,7 +7,7 @@ Last verified: 2026-10-20
 | Feature / problem | Benefit | Backend | Frontend | Status |
 |---|---|---|---|---|
 | CI runner verification | Prevent unverified releases | workflow/debugging | n/a | in progress |
-| Password recovery | Account recovery | reset-token/email endpoints | recovery pages | planned |
+| Password recovery | Account recovery | reset-token/email endpoints | recovery pages | implemented |
 | Production email provider | Real invites/transactional mail | provider adapter/job | status UX | planned |
 | Client portal | Lets clients participate directly | client permissions/endpoints | dedicated portal | planned |
 
@@ -15,7 +15,7 @@ Last verified: 2026-10-20
 
 | Feature | Benefit | Status |
 |---|---|---|
-| Safe GET timeout/retry + offline state | Better network resilience | planned |
+| Safe GET timeout/retry + offline state | Better network resilience | implemented |
 | Browser regression suite | Protect critical workflows | planned |
 | Object storage adapter | Production file durability | planned |
 | Deployment headers/CSP | Browser hardening | planned |
