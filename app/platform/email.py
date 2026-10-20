@@ -10,6 +10,7 @@ from typing import TypedDict
 
 from app.core.config import get_settings
 
+
 class Attachment(TypedDict):
     filename: str
     data: bytes
