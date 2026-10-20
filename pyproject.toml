@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "agencyos-backend"
 version = "0.1.0"
@@ -89,3 +93,7 @@ forbidden_modules = [
   "app.modules.billing", "app.modules.collab", "app.modules.files", "app.modules.privacy",
   "app.modules.reporting", "app.modules.search",
 ]
+
+
+[tool.setuptools.packages.find]
+include = ["app*"]
