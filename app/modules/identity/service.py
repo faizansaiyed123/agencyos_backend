@@ -225,9 +225,7 @@ def authenticate(db: Session, *, email: str, password: str) -> LoginOutcome:
     user.locked_until = None
 
     if user.mfa_enabled:
-        # Password was correct, but don't issue real tokens or set last_login_at
-        # yet — that happens in mfa_verify(), once the second factor also checks
-        # out. No refresh cookie is set at this stage either (see the router).
+        # Issue tokens and update last_login_at only after MFA succeeds.
         record_audit(
             db, org_id=user.org_id, actor_user_id=user.id, action="auth.password_ok_awaiting_mfa",
             entity_type="user", entity_id=user.id,
@@ -484,10 +482,7 @@ def create_invite(
         entity_type="invite", entity_id=invite.id, data={"email": invite.email, "role": role},
     )  # fmt: skip
 
-    # Transactional outbox: this INSERT lands in the SAME transaction as the
-    # invite row above, so the email job exists if and only if the invite
-    # itself committed — no risk of "invite created but no email queued" or
-    # vice versa, and no dependency on an external mail service to do it.
+    # Keep the invite and its email job in the same transaction.
     org = queries.get_organization(db, org_id)
     accept_url = f"{settings.app_base_url}/accept-invite?token={raw}"
     jobs.enqueue(
