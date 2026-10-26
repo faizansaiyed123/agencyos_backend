@@ -73,7 +73,7 @@ python -m venv .venv
 Create `.env` from `.env.example`, then prepare the local PostgreSQL roles and databases:
 
 ```bash
-./scripts/ensure_local_pg.sh
+bash scripts/ensure_local_pg.sh
 ```
 
 Apply migrations:
