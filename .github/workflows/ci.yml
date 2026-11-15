@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [main, feature/billing-credit-notes-refunds, feature/billing-credit-refunds-final]
+    branches: [main, feature/billing-credit-refunds-final]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -69,11 +69,10 @@ jobs:
           import os
           import psycopg
 
-          with psycopg.connect(
-    os.environ["AGENCYOS_DATABASE_URL"].replace(
-        "postgresql+psycopg://", "postgresql://", 1
-    )
-) as conn:
+          database_url = os.environ["AGENCYOS_DATABASE_URL"].replace(
+              "postgresql+psycopg://", "postgresql://", 1
+          )
+          with psycopg.connect(database_url) as conn:
               with conn.cursor() as cur:
                   cur.execute("SELECT current_user")
                   assert cur.fetchone()[0] == "agencyos_app"
