@@ -132,6 +132,8 @@ Run:
 pytest
 ```
 
+The GitHub Actions backend gate also applies the complete Alembic migration chain to PostgreSQL 16, verifies the separate runtime role and tenant RLS privileges, and builds the production Docker image.
+
 The development dependencies also include Ruff, mypy, import-linter, pytest-cov, and related tooling.
 
 ## Project structure
