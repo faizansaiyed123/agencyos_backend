@@ -69,7 +69,11 @@ jobs:
           import os
           import psycopg
 
-          with psycopg.connect(os.environ["AGENCYOS_DATABASE_URL"]) as conn:
+          with psycopg.connect(
+    os.environ["AGENCYOS_DATABASE_URL"].replace(
+        "postgresql+psycopg://", "postgresql://", 1
+    )
+) as conn:
               with conn.cursor() as cur:
                   cur.execute("SELECT current_user")
                   assert cur.fetchone()[0] == "agencyos_app"
