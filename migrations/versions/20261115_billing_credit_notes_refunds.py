@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "billingcredits01"
-down_revision = "passwordreset01"
+down_revision = "clientportal01"
 branch_labels = None
 depends_on = None
 
