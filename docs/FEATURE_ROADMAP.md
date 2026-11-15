@@ -21,7 +21,7 @@ Last verified: 2026-10-20
 
 | Feature | Benefit |
 |---|---|
-| Refunds / credit notes | Complete financial reversal workflow | ✅
+| Refunds / credit notes | Complete financial reversal workflow |
 | Object storage adapter | Cloud-native durable file storage |
 | Expanded E2E scenarios | Broader regression confidence |
 | Advanced saved filters / bulk actions | Higher agency productivity |

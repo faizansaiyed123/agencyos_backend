@@ -8,11 +8,11 @@ AgencyOS Backend is a Python 3.12+ FastAPI application backed by PostgreSQL and 
 - **Proposals:** proposal and line-item management with draft, sent, accepted, rejected, and expired states.
 - **Projects:** projects, members, milestones, tasks, project lifecycle transitions, and project creation from accepted deals.
 - **Time tracking:** running timers, manual entries, summaries, entry updates/deletion, and approval.
-- **Billing and invoices:** invoices, invoice lines, milestone/time-based billing, immutable payments, refunds, credit notes, settlement balances, invoice/credit-note PDFs, sending, issuing, and voiding.
+- **Billing and invoices:** invoices, invoice lines, milestone/time-based billing, payments, invoice numbering, PDF rendering, sending, issuing, and voiding.
 - **Client portal:** client-scoped overview, projects, proposals, proposal decisions, invoices, and invoice PDF access.
 - **Background worker:** a PostgreSQL-backed job queue and transactional outbox with registered handlers for invite email, password-reset email, proposal expiration, invoice email, and webhook delivery.
 - **MFA:** TOTP enrollment and verification, encrypted TOTP secrets, and recovery codes.
-- **Webhooks:** tenant-scoped webhook endpoints, signed deliveries, event subscriptions (including billing credits/refunds), SSRF protections, retries, and delivery records.
+- **Webhooks:** tenant-scoped webhook endpoints, signed deliveries, event subscriptions, SSRF protections, retries, and delivery records.
 
 ## Architecture
 
@@ -132,8 +132,6 @@ Run:
 pytest
 ```
 
-The GitHub Actions backend gate also applies the complete Alembic migration chain to PostgreSQL 16, verifies the separate runtime role and tenant RLS privileges, and builds the production Docker image.
-
 The development dependencies also include Ruff, mypy, import-linter, pytest-cov, and related tooling.
 
 ## Project structure
@@ -177,15 +175,3 @@ tests/
 - [Security Policy](SECURITY.md)
 - [Feature Roadmap](docs/FEATURE_ROADMAP.md)
 - [Known Issues](docs/KNOWN_ISSUES.md)
-
-
-### Billing adjustments
-
-Issued invoices support append-only credit notes and payment-refund records:
-
-- `POST /api/v1/invoices/{invoice_id}/credit-notes` issues a numbered credit note.
-- `POST /api/v1/invoices/{invoice_id}/payments/{payment_id}/refunds` records money already returned against the original payment.
-- `GET /api/v1/credit-notes/{credit_note_id}/pdf` renders the credit-note document.
-- Client accounts can list their own credit notes at `GET /api/v1/portal/credit-notes` and download a scoped credit-note PDF at `GET /api/v1/portal/credit-notes/{credit_note_id}/pdf`.
-
-Both write endpoints support `Idempotency-Key`. Payment records and issued credit/refund records are not edited or deleted. The refund endpoint records an externally processed refund; it does not call a payment processor or move funds.

@@ -41,13 +41,3 @@ Client portal queries constrain both org and client account.
 ## Production topology
 
 Frontend Nginx serves the SPA and proxies /api/* to the backend. The backend and worker run separately from PostgreSQL. SMTP is required in production for invites, password recovery, and invoice delivery.
-
-
-## Billing adjustments
-
-- `POST /invoices/{invoice_id}/credit-notes` — issue an immutable, numbered credit note.
-- `POST /invoices/{invoice_id}/payments/{payment_id}/refunds` — record a refund against an original immutable payment.
-- `GET /credit-notes/{credit_note_id}/pdf` — download the credit-note document.
-- `GET /portal/credit-notes` and `GET /portal/credit-notes/{credit_note_id}/pdf` — client-scoped credit-note access.
-
-Invoice responses expose gross payments, refunds, issued credits, remaining amount due and any client credit balance separately.

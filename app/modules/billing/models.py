@@ -43,15 +43,6 @@ class InvoiceCounter(Base):
     last_number: Mapped[int] = mapped_column(Integer, default=0)
 
 
-class CreditNoteCounter(Base):
-    __tablename__ = "credit_note_counters"
-    __table_args__ = (PrimaryKeyConstraint("org_id", "year", name="pk_credit_note_counters"),)
-
-    org_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    year: Mapped[int] = mapped_column(Integer)
-    last_number: Mapped[int] = mapped_column(Integer, default=0)
-
-
 class Invoice(Base):
     __tablename__ = "invoices"
     __table_args__ = (
@@ -86,21 +77,7 @@ class Invoice(Base):
             "amount_paid_cents >= 0 AND amount_paid_cents <= total_cents", name="paid_within_total"
         ),
         CheckConstraint(
-            "amount_refunded_cents >= 0 AND amount_refunded_cents <= amount_paid_cents",
-            name="refunds_within_paid",
-        ),
-        CheckConstraint(
-            "credit_note_cents >= 0 AND credit_note_cents <= total_cents",
-            name="credits_within_total",
-        ),
-        CheckConstraint(
-            "status != 'paid' OR "
-            "(amount_paid_cents - amount_refunded_cents >= total_cents - credit_note_cents)",
-            name="paid_means_settled",
-        ),
-        CheckConstraint(
-            "status != 'credited' OR credit_note_cents = total_cents",
-            name="credited_means_fully_credited",
+            "status != 'paid' OR amount_paid_cents = total_cents", name="paid_means_settled"
         ),
         CheckConstraint("status != 'void' OR void_reason IS NOT NULL", name="void_requires_reason"),
         Index("ix_invoices_org_id_status", "org_id", "status"),
@@ -121,8 +98,6 @@ class Invoice(Base):
     tax_cents: Mapped[int] = mapped_column(BigInteger, default=0)
     total_cents: Mapped[int] = mapped_column(BigInteger, default=0)
     amount_paid_cents: Mapped[int] = mapped_column(BigInteger, default=0)
-    amount_refunded_cents: Mapped[int] = mapped_column(BigInteger, default=0)
-    credit_note_cents: Mapped[int] = mapped_column(BigInteger, default=0)
     notes: Mapped[str | None] = mapped_column(Text)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -168,47 +143,12 @@ class InvoiceLine(Base):
     updated_at: Mapped[datetime] = updated_at_col()
 
 
-class CreditNote(Base):
-    """An issued, immutable reduction of an invoice receivable."""
-
-    __tablename__ = "credit_notes"
-    __table_args__ = (
-        UniqueConstraint("org_id", "id", name="uq_credit_notes_org_id_id"),
-        UniqueConstraint("org_id", "number", name="uq_credit_notes_org_id_number"),
-        ForeignKeyConstraint(
-            ["org_id", "invoice_id"],
-            ["invoices.org_id", "invoices.id"],
-            name="fk_credit_notes_org_id_invoices",
-            ondelete="RESTRICT",
-        ),
-        ForeignKeyConstraint(
-            ["org_id", "created_by"],
-            ["users.org_id", "users.id"],
-            name="fk_credit_notes_org_id_users",
-            ondelete="RESTRICT",
-        ),
-        CheckConstraint("amount_cents > 0", name="amount_positive"),
-        Index("ix_credit_notes_org_id_invoice_id", "org_id", "invoice_id"),
-    )
-
-    id: Mapped[uuid.UUID] = uuid_pk()
-    org_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    invoice_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    number: Mapped[str] = mapped_column(String(30))
-    amount_cents: Mapped[int] = mapped_column(BigInteger)
-    issued_on: Mapped[date] = mapped_column(Date)
-    reason: Mapped[str] = mapped_column(Text)
-    created_by: Mapped[uuid.UUID] = mapped_column(Uuid)
-    created_at: Mapped[datetime] = created_at_col()
-
-
 class Payment(Base):
     """Immutable once recorded — payments are corrected by voiding the invoice
     (when unpaid) or by an accounting adjustment outside this system, never edited."""
 
     __tablename__ = "payments"
     __table_args__ = (
-        UniqueConstraint("org_id", "id", name="uq_payments_org_id_id"),
         ForeignKeyConstraint(
             ["org_id", "invoice_id"],
             ["invoices.org_id", "invoices.id"],
@@ -235,43 +175,5 @@ class Payment(Base):
     paid_on: Mapped[date] = mapped_column(Date)
     method: Mapped[str] = mapped_column(String(20), default="bank_transfer")
     reference: Mapped[str | None] = mapped_column(String(200))
-    created_by: Mapped[uuid.UUID] = mapped_column(Uuid)
-    created_at: Mapped[datetime] = created_at_col()
-
-
-
-class PaymentRefund(Base):
-    """An immutable record that cash from an original payment was returned."""
-
-    __tablename__ = "payment_refunds"
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["org_id", "payment_id"],
-            ["payments.org_id", "payments.id"],
-            name="fk_payment_refunds_org_id_payments",
-            ondelete="RESTRICT",
-        ),
-        ForeignKeyConstraint(
-            ["org_id", "created_by"],
-            ["users.org_id", "users.id"],
-            name="fk_payment_refunds_org_id_users",
-            ondelete="RESTRICT",
-        ),
-        CheckConstraint("amount_cents > 0", name="amount_positive"),
-        CheckConstraint(
-            "method IN ('bank_transfer', 'card', 'cash', 'other')",
-            name="method_valid",
-        ),
-        Index("ix_payment_refunds_org_id_payment_id", "org_id", "payment_id"),
-    )
-
-    id: Mapped[uuid.UUID] = uuid_pk()
-    org_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    payment_id: Mapped[uuid.UUID] = mapped_column(Uuid)
-    amount_cents: Mapped[int] = mapped_column(BigInteger)
-    refunded_on: Mapped[date] = mapped_column(Date)
-    method: Mapped[str] = mapped_column(String(20), default="bank_transfer")
-    reference: Mapped[str | None] = mapped_column(String(200))
-    reason: Mapped[str] = mapped_column(Text)
     created_by: Mapped[uuid.UUID] = mapped_column(Uuid)
     created_at: Mapped[datetime] = created_at_col()

@@ -41,24 +41,8 @@ class PaymentRequest(BaseModel):
     reference: str | None = Field(default=None, max_length=200)
 
 
-class PaymentRefundRequest(BaseModel):
-    amount_cents: int = Field(gt=0)
-    refunded_on: date | None = None
-    method: str | None = Field(
-        default=None, pattern="^(bank_transfer|card|cash|other)$"
-    )
-    reference: str | None = Field(default=None, max_length=200)
-    reason: str = Field(min_length=3, max_length=1000)
-
-
-class CreditNoteRequest(BaseModel):
-    amount_cents: int = Field(gt=0)
-    issued_on: date | None = None
-    reason: str = Field(min_length=3, max_length=1000)
-
-
 class VoidRequest(BaseModel):
-    reason: str = Field(min_length=3, max_length=1000)
+    reason: str = Field(min_length=3)
 
 
 class LineOut(BaseModel):
@@ -85,33 +69,6 @@ class PaymentOut(BaseModel):
     created_at: datetime
 
 
-class PaymentRefundOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    payment_id: uuid.UUID
-    amount_cents: int
-    refunded_on: date
-    method: str
-    reference: str | None
-    reason: str
-    created_by: uuid.UUID
-    created_at: datetime
-
-
-class CreditNoteOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    invoice_id: uuid.UUID
-    number: str
-    amount_cents: int
-    issued_on: date
-    reason: str
-    created_by: uuid.UUID
-    created_at: datetime
-
-
 class InvoiceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -128,10 +85,7 @@ class InvoiceOut(BaseModel):
     tax_cents: int
     total_cents: int
     amount_paid_cents: int
-    amount_refunded_cents: int
-    credit_note_cents: int
     balance_cents: int = 0
-    credit_balance_cents: int = 0
     is_overdue: bool = False
     notes: str | None
     sent_at: datetime | None
@@ -145,8 +99,6 @@ class InvoiceDetailOut(BaseModel):
     invoice: InvoiceOut
     lines: list[LineOut]
     payments: list[PaymentOut]
-    refunds: list[PaymentRefundOut]
-    credit_notes: list[CreditNoteOut]
 
 
 class UnbilledRow(BaseModel):
