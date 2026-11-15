@@ -1,7 +1,7 @@
 """billing credit notes and payment refunds
 
 Revision ID: billingcredits01
-Revises: passwordreset01
+Revises: clientportal01
 Create Date: 2026-11-15
 
 Credit notes and payment refunds are separate immutable, tenant-scoped ledgers.
