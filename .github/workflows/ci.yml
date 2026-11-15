@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [main, feature/billing-credit-refunds-final]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: backend-ci-${{ github.ref }}
+  group: backend-ci-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
