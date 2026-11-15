@@ -53,31 +53,31 @@ def upgrade() -> None:
     op.alter_column("invoices", "amount_refunded_cents", server_default=None)
     op.alter_column("invoices", "credit_note_cents", server_default=None)
 
-    op.drop_constraint("ck_invoices_status_valid", "invoices", type_="check")
-    op.drop_constraint("ck_invoices_paid_means_settled", "invoices", type_="check")
+    op.drop_constraint(op.f("ck_invoices_status_valid"), "invoices", type_="check")
+    op.drop_constraint(op.f("ck_invoices_paid_means_settled"), "invoices", type_="check")
     op.create_check_constraint(
-        "ck_invoices_status_valid",
+        op.f("ck_invoices_status_valid"),
         "invoices",
         "status IN ('draft', 'sent', 'partially_paid', 'paid', 'credited', 'void')",
     )
     op.create_check_constraint(
-        "ck_invoices_paid_means_settled",
+        op.f("ck_invoices_paid_means_settled"),
         "invoices",
         "status != 'paid' OR "
         "(amount_paid_cents - amount_refunded_cents >= total_cents - credit_note_cents)",
     )
     op.create_check_constraint(
-        "ck_invoices_credited_means_fully_credited",
+        op.f("ck_invoices_credited_means_fully_credited"),
         "invoices",
         "status != 'credited' OR credit_note_cents = total_cents",
     )
     op.create_check_constraint(
-        "ck_invoices_refunds_within_paid",
+        op.f("ck_invoices_refunds_within_paid"),
         "invoices",
         "amount_refunded_cents >= 0 AND amount_refunded_cents <= amount_paid_cents",
     )
     op.create_check_constraint(
-        "ck_invoices_credits_within_total",
+        op.f("ck_invoices_credits_within_total"),
         "invoices",
         "credit_note_cents >= 0 AND credit_note_cents <= total_cents",
     )
@@ -115,7 +115,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.CheckConstraint("amount_cents > 0", name="ck_credit_notes_amount_positive"),
+        sa.CheckConstraint("amount_cents > 0", name=op.f("ck_credit_notes_amount_positive")),
         sa.ForeignKeyConstraint(
             ["org_id", "invoice_id"],
             ["invoices.org_id", "invoices.id"],
@@ -161,10 +161,10 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.CheckConstraint("amount_cents > 0", name="ck_payment_refunds_amount_positive"),
+        sa.CheckConstraint("amount_cents > 0", name=op.f("ck_payment_refunds_amount_positive")),
         sa.CheckConstraint(
             "method IN ('bank_transfer', 'card', 'cash', 'other')",
-            name="ck_payment_refunds_method_valid",
+            name=op.f("ck_payment_refunds_method_valid"),
         ),
         sa.ForeignKeyConstraint(
             ["org_id", "payment_id"],
@@ -211,22 +211,22 @@ def downgrade() -> None:
     op.drop_table("credit_note_counters")
     op.drop_constraint("uq_payments_org_id_id", "payments", type_="unique")
 
-    op.drop_constraint("ck_invoices_credits_within_total", "invoices", type_="check")
-    op.drop_constraint("ck_invoices_refunds_within_paid", "invoices", type_="check")
+    op.drop_constraint(op.f("ck_invoices_credits_within_total"), "invoices", type_="check")
+    op.drop_constraint(op.f("ck_invoices_refunds_within_paid"), "invoices", type_="check")
     op.drop_constraint(
-        "ck_invoices_credited_means_fully_credited", "invoices", type_="check"
+        op.f("ck_invoices_credited_means_fully_credited"), "invoices", type_="check"
     )
-    op.drop_constraint("ck_invoices_paid_means_settled", "invoices", type_="check")
-    op.drop_constraint("ck_invoices_status_valid", "invoices", type_="check")
+    op.drop_constraint(op.f("ck_invoices_paid_means_settled"), "invoices", type_="check")
+    op.drop_constraint(op.f("ck_invoices_status_valid"), "invoices", type_="check")
     op.drop_column("invoices", "credit_note_cents")
     op.drop_column("invoices", "amount_refunded_cents")
     op.create_check_constraint(
-        "ck_invoices_status_valid",
+        op.f("ck_invoices_status_valid"),
         "invoices",
         "status IN ('draft', 'sent', 'partially_paid', 'paid', 'void')",
     )
     op.create_check_constraint(
-        "ck_invoices_paid_means_settled",
+        op.f("ck_invoices_paid_means_settled"),
         "invoices",
         "status != 'paid' OR amount_paid_cents = total_cents",
     )
