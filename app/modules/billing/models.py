@@ -135,7 +135,6 @@ class Invoice(Base):
 class InvoiceLine(Base):
     __tablename__ = "invoice_lines"
     __table_args__ = (
-        UniqueConstraint("org_id", "id", name="uq_payments_org_id_id"),
         ForeignKeyConstraint(
             ["org_id", "invoice_id"],
             ["invoices.org_id", "invoices.id"],
@@ -208,6 +207,7 @@ class Payment(Base):
 
     __tablename__ = "payments"
     __table_args__ = (
+        UniqueConstraint("org_id", "id", name="uq_payments_org_id_id"),
         ForeignKeyConstraint(
             ["org_id", "invoice_id"],
             ["invoices.org_id", "invoices.id"],
