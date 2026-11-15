@@ -13,7 +13,7 @@ from app.core.pagination import Page, PageDep
 from app.core.permissions import Perm
 from app.modules.billing import service
 from app.modules.billing.models import Invoice
-from app.modules.billing.pdf import render_invoice_pdf
+from app.modules.billing.pdf import render_credit_note_pdf, render_invoice_pdf
 from app.modules.billing.schemas import (
     InvoiceCreateRequest,
     InvoiceDetailOut,
