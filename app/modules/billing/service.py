@@ -15,7 +15,6 @@ from app.core.errors import BusinessRuleViolation, Conflict, NotFound
 from app.modules.billing.invoice_states import PAYABLE, settlement
 from app.modules.billing.models import (
     CreditNote,
-    CreditNoteCounter,
     Invoice,
     InvoiceLine,
     Payment,
