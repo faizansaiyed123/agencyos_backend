@@ -338,8 +338,6 @@ def test_refund_locks_and_recalculates_the_original_payment(
 ) -> None:
     import uuid
 
-    from unittest.mock import Mock
-
     invoice = SimpleNamespace(
         id=uuid.uuid4(),
         org_id=uuid.uuid4(),
@@ -397,8 +395,6 @@ def test_refund_cannot_exceed_the_unrefunded_amount_of_its_payment(
 ) -> None:
     import uuid
 
-    from unittest.mock import Mock
-
     invoice = SimpleNamespace(
         id=uuid.uuid4(),
         org_id=uuid.uuid4(),
@@ -437,8 +433,8 @@ def test_refund_cannot_exceed_the_unrefunded_amount_of_its_payment(
 
 
 def test_credit_note_pdf_renderer_produces_pdf_bytes() -> None:
-    from datetime import date
     import uuid
+    from datetime import date
 
     credit_note = SimpleNamespace(
         id=uuid.uuid4(),
