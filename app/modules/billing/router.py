@@ -13,8 +13,10 @@ from app.core.pagination import Page, PageDep
 from app.core.permissions import Perm
 from app.modules.billing import service
 from app.modules.billing.models import Invoice
-from app.modules.billing.pdf import render_invoice_pdf
+from app.modules.billing.pdf import render_credit_note_pdf, render_invoice_pdf
 from app.modules.billing.schemas import (
+    CreditNoteOut,
+    CreditNoteRequest,
     InvoiceCreateRequest,
     InvoiceDetailOut,
     InvoiceOut,
@@ -23,6 +25,8 @@ from app.modules.billing.schemas import (
     LineOut,
     MilestoneLineRequest,
     PaymentOut,
+    PaymentRefundOut,
+    PaymentRefundRequest,
     PaymentRequest,
     TimeLinesRequest,
     UnbilledRow,
@@ -43,6 +47,7 @@ Manager = Annotated[User, Depends(require(Perm.INVOICE_MANAGE))]
 def _out(inv: Invoice) -> InvoiceOut:
     o = InvoiceOut.model_validate(inv)
     o.balance_cents = service.balance(inv)
+    o.credit_balance_cents = service.credit_balance(inv)
     o.is_overdue = service.is_overdue(inv)
     return o
 
@@ -53,6 +58,14 @@ def _detail(db: Session, inv: Invoice) -> InvoiceDetailOut:
         lines=[LineOut.model_validate(x) for x in service.lines_of(db, inv.org_id, inv.id)],
         payments=[
             PaymentOut.model_validate(x) for x in service.payments_of(db, inv.org_id, inv.id)
+        ],
+        refunds=[
+            PaymentRefundOut.model_validate(x)
+            for x in service.refunds_of(db, inv.org_id, inv.id)
+        ],
+        credit_notes=[
+            CreditNoteOut.model_validate(x)
+            for x in service.credit_notes_of(db, inv.org_id, inv.id)
         ],
     )
 
@@ -303,6 +316,127 @@ def pay(
         )
         db.commit()
     return out
+
+
+@router.post(
+    "/invoices/{invoice_id}/credit-notes",
+    response_model=CreditNoteOut,
+    status_code=201,
+)
+def issue_credit_note(
+    invoice_id: uuid.UUID,
+    body: CreditNoteRequest,
+    user: Manager,
+    db: Db,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> CreditNoteOut | JSONResponse:
+    fp = None
+    if idempotency_key:
+        fp = idempotency.fingerprint(
+            "POST",
+            f"/invoices/{invoice_id}/credit-notes",
+            body.model_dump_json().encode(),
+        )
+        try:
+            idempotency.check_idempotency_key(
+                db, org_id=user.org_id, key=idempotency_key, request_fp=fp
+            )
+        except idempotency.IdempotencyReplay as replay:
+            return JSONResponse(status_code=replay.status, content=replay.body)
+
+    note = service.issue_credit_note(
+        db,
+        org_id=user.org_id,
+        actor_id=user.id,
+        invoice_id=invoice_id,
+        amount_cents=body.amount_cents,
+        issued_on=body.issued_on,
+        reason=body.reason,
+        commit=not bool(idempotency_key),
+    )
+    out = CreditNoteOut.model_validate(note)
+    if idempotency_key and fp:
+        idempotency.store_idempotency_result(
+            db,
+            org_id=user.org_id,
+            user_id=user.id,
+            key=idempotency_key,
+            request_fp=fp,
+            status=201,
+            body=out.model_dump(mode="json"),
+        )
+        db.commit()
+    return out
+
+
+@router.post(
+    "/invoices/{invoice_id}/payments/{payment_id}/refunds",
+    response_model=PaymentRefundOut,
+    status_code=201,
+)
+def refund_payment(
+    invoice_id: uuid.UUID,
+    payment_id: uuid.UUID,
+    body: PaymentRefundRequest,
+    user: Manager,
+    db: Db,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> PaymentRefundOut | JSONResponse:
+    fp = None
+    if idempotency_key:
+        fp = idempotency.fingerprint(
+            "POST",
+            f"/invoices/{invoice_id}/payments/{payment_id}/refunds",
+            body.model_dump_json().encode(),
+        )
+        try:
+            idempotency.check_idempotency_key(
+                db, org_id=user.org_id, key=idempotency_key, request_fp=fp
+            )
+        except idempotency.IdempotencyReplay as replay:
+            return JSONResponse(status_code=replay.status, content=replay.body)
+
+    refund = service.record_refund(
+        db,
+        org_id=user.org_id,
+        actor_id=user.id,
+        invoice_id=invoice_id,
+        payment_id=payment_id,
+        amount_cents=body.amount_cents,
+        refunded_on=body.refunded_on,
+        method=body.method,
+        reference=body.reference,
+        reason=body.reason,
+        commit=not bool(idempotency_key),
+    )
+    out = PaymentRefundOut.model_validate(refund)
+    if idempotency_key and fp:
+        idempotency.store_idempotency_result(
+            db,
+            org_id=user.org_id,
+            user_id=user.id,
+            key=idempotency_key,
+            request_fp=fp,
+            status=201,
+            body=out.model_dump(mode="json"),
+        )
+        db.commit()
+    return out
+
+
+@router.get("/credit-notes/{credit_note_id}/pdf")
+def credit_note_pdf(credit_note_id: uuid.UUID, user: Reader, db: Db) -> Response:
+    note = service.get_credit_note(db, user.org_id, credit_note_id)
+    invoice = service.get_invoice(db, user.org_id, note.invoice_id)
+    client = service.crm_queries.get_client(db, user.org_id, invoice.client_id)
+    if client is None:
+        raise NotFound("Client not found")
+    content = render_credit_note_pdf(note, invoice, client)
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{note.number}.pdf"'},
+    )
 
 
 __all__ = ["Decimal", "router"]

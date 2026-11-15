@@ -7,11 +7,13 @@ from sqlalchemy.orm import Session
 from app.core.db import set_org_context
 from app.core.errors import Forbidden, NotFound
 from app.core.permissions import Role
-from app.modules.billing.models import Invoice, InvoiceLine
+from app.modules.billing import service as billing_service
+from app.modules.billing.models import CreditNote, Invoice, InvoiceLine
 from app.modules.crm.models import Client
 from app.modules.identity.models import User
 from app.modules.portal.schemas import (
     PortalClientOut,
+    PortalCreditNoteOut,
     PortalInvoiceOut,
     PortalOverviewOut,
     PortalProjectOut,
@@ -76,7 +78,10 @@ def _invoice_out(invoice: Invoice) -> PortalInvoiceOut:
         due_date=invoice.due_date,
         total_cents=invoice.total_cents,
         amount_paid_cents=invoice.amount_paid_cents,
-        balance_cents=invoice.total_cents - invoice.amount_paid_cents,
+        amount_refunded_cents=invoice.amount_refunded_cents,
+        credit_note_cents=invoice.credit_note_cents,
+        balance_cents=billing_service.balance(invoice),
+        credit_balance_cents=billing_service.credit_balance(invoice),
         notes=invoice.notes,
     )
 
@@ -270,3 +275,46 @@ def invoices(db: Session, user: User) -> list[PortalInvoiceOut]:
         .order_by(Invoice.created_at.desc())
     )
     return [_invoice_out(i) for i in rows]
+
+
+
+def credit_notes(db: Session, user: User) -> list[PortalCreditNoteOut]:
+    cid, _ = _context(db, user)
+    rows = db.scalars(
+        select(CreditNote)
+        .join(
+            Invoice,
+            (CreditNote.org_id == Invoice.org_id)
+            & (CreditNote.invoice_id == Invoice.id),
+        )
+        .where(
+            CreditNote.org_id == user.org_id,
+            Invoice.client_id == cid,
+            Invoice.status != "draft",
+        )
+        .order_by(CreditNote.issued_on.desc(), CreditNote.created_at.desc())
+    )
+    return [PortalCreditNoteOut.model_validate(row) for row in rows]
+
+
+def credit_note_pdf_data(
+    db: Session, user: User, credit_note_id: uuid.UUID
+) -> tuple[CreditNote, Invoice, Client]:
+    cid, client = _context(db, user)
+    row = db.execute(
+        select(CreditNote, Invoice)
+        .join(
+            Invoice,
+            (CreditNote.org_id == Invoice.org_id)
+            & (CreditNote.invoice_id == Invoice.id),
+        )
+        .where(
+            CreditNote.org_id == user.org_id,
+            CreditNote.id == credit_note_id,
+            Invoice.client_id == cid,
+            Invoice.status != "draft",
+        )
+    ).first()
+    if row is None:
+        raise NotFound("Credit note not found")
+    return row[0], row[1], client

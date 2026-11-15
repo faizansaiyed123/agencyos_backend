@@ -1,0 +1,107 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: PostgreSQL migration, tests and image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      AGENCYOS_ENV: test
+      AGENCYOS_DATABASE_URL: postgresql+psycopg://agencyos_app:agencyos_app@127.0.0.1:5432/agencyos
+      AGENCYOS_MIGRATION_DATABASE_URL: postgresql+psycopg://agencyos:agencyos@127.0.0.1:5432/agencyos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[dev]"
+
+      - name: Create separated database roles and database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f scripts/init_db.sql
+
+      - name: Apply all database migrations
+        run: alembic upgrade head
+
+      - name: Verify runtime role and immutable tenant ledgers
+        env:
+          PGPASSWORD: postgres
+        run: |
+          python - <<'PY'
+          import os
+          import psycopg
+
+          database_url = os.environ["AGENCYOS_DATABASE_URL"].replace(
+              "postgresql+psycopg://", "postgresql://", 1
+          )
+          with psycopg.connect(database_url) as conn:
+              with conn.cursor() as cur:
+                  cur.execute("SELECT current_user")
+                  assert cur.fetchone()[0] == "agencyos_app"
+
+          with psycopg.connect(
+              "postgresql://postgres:postgres@127.0.0.1:5432/agencyos"
+          ) as conn:
+              with conn.cursor() as cur:
+                  cur.execute(
+                      """
+                      SELECT c.relrowsecurity, c.relforcerowsecurity,
+                             has_table_privilege('agencyos_app', 'credit_notes', 'INSERT'),
+                             has_table_privilege('agencyos_app', 'credit_notes', 'UPDATE'),
+                             has_table_privilege('agencyos_app', 'payment_refunds', 'INSERT'),
+                             has_table_privilege('agencyos_app', 'payment_refunds', 'DELETE'),
+                             has_table_privilege('agencyos_app', 'credit_note_counters', 'UPDATE')
+                      FROM pg_class c
+                      WHERE c.oid = 'credit_notes'::regclass
+                      """
+                  )
+                  row = cur.fetchone()
+                  assert row == (True, True, True, False, True, False, True), row
+          PY
+
+      - name: Ruff
+        run: ruff check app migrations tests
+
+      - name: Unit and regression tests
+        run: pytest
+
+      - name: Build production container
+        run: docker build --tag agencyos-backend:ci .

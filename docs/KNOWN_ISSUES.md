@@ -12,7 +12,6 @@ Production requires real PostgreSQL credentials, strong JWT/MFA secrets, HTTPS/C
 
 ## Future enhancements
 
-- Payment refunds / credit notes
 - Object-storage adapter
 - Expanded browser scenario coverage
 - Advanced saved filters / bulk actions
