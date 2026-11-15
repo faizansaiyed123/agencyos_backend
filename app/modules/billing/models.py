@@ -94,7 +94,8 @@ class Invoice(Base):
             name="credits_within_total",
         ),
         CheckConstraint(
-            "status != 'paid' OR (amount_paid_cents - amount_refunded_cents >= total_cents - credit_note_cents)",
+            "status != 'paid' OR "
+            "(amount_paid_cents - amount_refunded_cents >= total_cents - credit_note_cents)",
             name="paid_means_settled",
         ),
         CheckConstraint(
