@@ -15,12 +15,12 @@ from app.modules.billing import service
 from app.modules.billing.models import Invoice
 from app.modules.billing.pdf import render_credit_note_pdf, render_invoice_pdf
 from app.modules.billing.schemas import (
+    CreditNoteOut,
+    CreditNoteRequest,
     InvoiceCreateRequest,
     InvoiceDetailOut,
     InvoiceOut,
     InvoiceUpdateRequest,
-    CreditNoteOut,
-    CreditNoteRequest,
     LineCreateRequest,
     LineOut,
     MilestoneLineRequest,
