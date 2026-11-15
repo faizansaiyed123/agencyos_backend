@@ -74,6 +74,12 @@ def render_invoice_pdf(invoice: Invoice, client: Client, lines: Iterable[Invoice
     )
     story.append(Spacer(1, 14))
 
+    _, amount_due_cents, client_credit_cents = settlement(
+        total_cents=invoice.total_cents,
+        amount_paid_cents=invoice.amount_paid_cents,
+        amount_refunded_cents=invoice.amount_refunded_cents,
+        credit_note_cents=invoice.credit_note_cents,
+    )
     rows = [["Description", "Qty", "Unit", "Amount"]]
     for line in lines:
         rows.append([
@@ -108,13 +114,13 @@ def render_invoice_pdf(invoice: Invoice, client: Client, lines: Iterable[Invoice
             "",
             "",
             "Balance",
-            f"{settlement(total_cents=invoice.total_cents, amount_paid_cents=invoice.amount_paid_cents, amount_refunded_cents=invoice.amount_refunded_cents, credit_note_cents=invoice.credit_note_cents)[1] / 100:.2f} {invoice.currency}",
+            f"{amount_due_cents / 100:.2f} {invoice.currency}",
         ],
         [
             "",
             "",
             "Client credit",
-            f"{settlement(total_cents=invoice.total_cents, amount_paid_cents=invoice.amount_paid_cents, amount_refunded_cents=invoice.amount_refunded_cents, credit_note_cents=invoice.credit_note_cents)[2] / 100:.2f} {invoice.currency}",
+            f"{client_credit_cents / 100:.2f} {invoice.currency}",
         ],
     ])
 
@@ -209,7 +215,10 @@ def render_credit_note_pdf(credit_note: CreditNote, invoice: Invoice, client: Cl
             [
                 ["Credit note amount", f"{credit_note.amount_cents / 100:.2f} {invoice.currency}"],
                 ["Original invoice total", f"{invoice.total_cents / 100:.2f} {invoice.currency}"],
-                ["Total credits issued", f"{invoice.credit_note_cents / 100:.2f} {invoice.currency}"],
+                [
+                    "Total credits issued",
+                    f"{invoice.credit_note_cents / 100:.2f} {invoice.currency}",
+                ],
                 ["Outstanding balance", f"{amount_due / 100:.2f} {invoice.currency}"],
                 ["Client credit balance", f"{client_credit / 100:.2f} {invoice.currency}"],
             ],
