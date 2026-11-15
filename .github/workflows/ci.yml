@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/billing-credit-notes-refunds]
   pull_request:
     branches: [main]
   workflow_dispatch:
