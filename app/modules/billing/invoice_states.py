@@ -21,7 +21,8 @@ def can_transition(from_status: str, to_status: str) -> bool:
 
 
 def is_final(status: str) -> bool:
-    return status in {"paid", "credited", "void"}
+    # A paid invoice can become partially/unpaid after a recorded refund.
+    return status in {"credited", "void"}
 
 
 def settlement(
