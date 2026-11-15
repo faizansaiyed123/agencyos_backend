@@ -50,8 +50,23 @@ class PortalInvoiceOut(BaseModel):
     due_date: date | None
     total_cents: int
     amount_paid_cents: int
+    amount_refunded_cents: int
+    credit_note_cents: int
     balance_cents: int
+    credit_balance_cents: int
     notes: str | None
+
+
+class PortalCreditNoteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    invoice_id: uuid.UUID
+    number: str
+    amount_cents: int
+    issued_on: date
+    reason: str
+    created_at: datetime
 
 
 class PortalOverviewOut(BaseModel):
