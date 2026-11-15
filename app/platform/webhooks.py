@@ -65,8 +65,6 @@ EVENT_TYPES = (
     "invoice.paid",
     "invoice.voided",
     "payment.recorded",
-    "payment.refunded",
-    "credit_note.issued",
     "approval.requested",
     "approval.decided",
     "time.approved",

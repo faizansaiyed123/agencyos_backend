@@ -5,11 +5,10 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.modules.billing.pdf import render_credit_note_pdf, render_invoice_pdf
+from app.modules.billing.pdf import render_invoice_pdf
 from app.modules.identity.deps import CurrentUser
 from app.modules.portal import service
 from app.modules.portal.schemas import (
-    PortalCreditNoteOut,
     PortalInvoiceOut,
     PortalOverviewOut,
     PortalProjectOut,
@@ -74,21 +73,3 @@ def invoice_pdf(invoice_id: uuid.UUID, user: CurrentUser, db: Db) -> Response:
 @router.get("/invoices", response_model=list[PortalInvoiceOut])
 def invoices(user: CurrentUser, db: Db) -> list[PortalInvoiceOut]:
     return service.invoices(db, user)
-
-
-
-@router.get("/credit-notes", response_model=list[PortalCreditNoteOut])
-def credit_notes(user: CurrentUser, db: Db) -> list[PortalCreditNoteOut]:
-    return service.credit_notes(db, user)
-
-
-@router.get("/credit-notes/{credit_note_id}/pdf")
-def credit_note_pdf(credit_note_id: uuid.UUID, user: CurrentUser, db: Db) -> Response:
-    note, invoice, client = service.credit_note_pdf_data(db, user, credit_note_id)
-    return Response(
-        content=render_credit_note_pdf(note, invoice, client),
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": f'attachment; filename="{note.number}.pdf"',
-        },
-    )

@@ -6,20 +6,14 @@ from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-from sqlalchemy import func, select, text, update
+from sqlalchemy import select, text, update
 from sqlalchemy.orm import Session
 
 from app.core.clock import utcnow
 from app.core.db import set_org_context
 from app.core.errors import BusinessRuleViolation, Conflict, NotFound
-from app.modules.billing.invoice_states import PAYABLE, settlement
-from app.modules.billing.models import (
-    CreditNote,
-    Invoice,
-    InvoiceLine,
-    Payment,
-    PaymentRefund,
-)
+from app.modules.billing.invoice_states import PAYABLE
+from app.modules.billing.models import Invoice, InvoiceLine, Payment
 from app.modules.crm import queries as crm_queries
 from app.modules.identity.models import User
 from app.modules.projects import queries as project_queries
@@ -39,36 +33,7 @@ def _tax(subtotal: int, bps: int) -> int:
 
 
 def balance(inv: Invoice) -> int:
-    return settlement(
-        total_cents=inv.total_cents,
-        amount_paid_cents=inv.amount_paid_cents,
-        amount_refunded_cents=inv.amount_refunded_cents,
-        credit_note_cents=inv.credit_note_cents,
-    )[1]
-
-
-def credit_balance(inv: Invoice) -> int:
-    return settlement(
-        total_cents=inv.total_cents,
-        amount_paid_cents=inv.amount_paid_cents,
-        amount_refunded_cents=inv.amount_refunded_cents,
-        credit_note_cents=inv.credit_note_cents,
-    )[2]
-
-
-def _sync_settlement_status(inv: Invoice) -> None:
-    if inv.status in {"draft", "void"}:
-        return
-    inv.status = settlement(
-        total_cents=inv.total_cents,
-        amount_paid_cents=inv.amount_paid_cents,
-        amount_refunded_cents=inv.amount_refunded_cents,
-        credit_note_cents=inv.credit_note_cents,
-    )[0]
-    if inv.status == "paid":
-        inv.paid_at = inv.paid_at or utcnow()
-    else:
-        inv.paid_at = None
+    return inv.total_cents - inv.amount_paid_cents
 
 
 def is_overdue(inv: Invoice, today: date | None = None) -> bool:
@@ -126,222 +91,6 @@ def _recalc(db: Session, inv: Invoice) -> None:
     inv.subtotal_cents = sum(line.amount_cents for line in lines_of(db, inv.org_id, inv.id))
     inv.tax_cents = _tax(inv.subtotal_cents, inv.tax_rate_bps)
     inv.total_cents = inv.subtotal_cents + inv.tax_cents
-
-
-def credit_notes_of(db: Session, org_id: uuid.UUID, invoice_id: uuid.UUID) -> list[CreditNote]:
-    return list(
-        db.scalars(
-            select(CreditNote)
-            .where(CreditNote.org_id == org_id, CreditNote.invoice_id == invoice_id)
-            .order_by(CreditNote.issued_on, CreditNote.created_at)
-        )
-    )
-
-
-def refunds_of(db: Session, org_id: uuid.UUID, invoice_id: uuid.UUID) -> list[PaymentRefund]:
-    return list(
-        db.scalars(
-            select(PaymentRefund)
-            .join(
-                Payment,
-                (PaymentRefund.org_id == Payment.org_id)
-                & (PaymentRefund.payment_id == Payment.id),
-            )
-            .where(Payment.org_id == org_id, Payment.invoice_id == invoice_id)
-            .order_by(PaymentRefund.refunded_on, PaymentRefund.created_at)
-        )
-    )
-
-
-def refunds_for_payment(db: Session, org_id: uuid.UUID, payment_id: uuid.UUID) -> int:
-    amount = db.scalar(
-        select(func.coalesce(func.sum(PaymentRefund.amount_cents), 0)).where(
-            PaymentRefund.org_id == org_id,
-            PaymentRefund.payment_id == payment_id,
-        )
-    )
-    return int(amount or 0)
-
-
-def get_credit_note(db: Session, org_id: uuid.UUID, credit_note_id: uuid.UUID) -> CreditNote:
-    set_org_context(db, org_id)
-    note = db.scalar(
-        select(CreditNote).where(
-            CreditNote.org_id == org_id,
-            CreditNote.id == credit_note_id,
-        )
-    )
-    if note is None:
-        raise NotFound("Credit note not found")
-    return note
-
-
-def _next_credit_note_number(db: Session, org_id: uuid.UUID, year: int) -> str:
-    number = db.execute(
-        text(
-            "INSERT INTO credit_note_counters (org_id, year, last_number) VALUES (:o, :y, 1) "
-            "ON CONFLICT (org_id, year) DO UPDATE "
-            "SET last_number = credit_note_counters.last_number + 1 "
-            "RETURNING last_number"
-        ),
-        {"o": org_id, "y": year},
-    ).scalar_one()
-    return f"CN-{year}-{number:04d}"
-
-
-def issue_credit_note(
-    db: Session,
-    *,
-    org_id: uuid.UUID,
-    actor_id: uuid.UUID,
-    invoice_id: uuid.UUID,
-    amount_cents: int,
-    issued_on: date | None,
-    reason: str,
-    commit: bool = True,
-) -> CreditNote:
-    """Issue an immutable credit note against an invoice's remaining gross value."""
-    inv = get_invoice(db, org_id, invoice_id, lock=True)
-    if inv.status in {"draft", "void", "credited"}:
-        raise Conflict(
-            f"Cannot issue a credit note for a {inv.status} invoice",
-            code="invoice_not_creditable",
-        )
-    available = inv.total_cents - inv.credit_note_cents
-    if amount_cents > available:
-        raise BusinessRuleViolation(
-            f"Credit note exceeds the remaining creditable amount of {available} cents",
-            code="credit_note_exceeds_invoice",
-        )
-
-    date_issued = issued_on or utcnow().date()
-    note = CreditNote(
-        org_id=org_id,
-        invoice_id=inv.id,
-        number=_next_credit_note_number(db, org_id, date_issued.year),
-        amount_cents=amount_cents,
-        issued_on=date_issued,
-        reason=reason,
-        created_by=actor_id,
-    )
-    db.add(note)
-    inv.credit_note_cents += amount_cents
-    _sync_settlement_status(inv)
-    db.flush()
-    record_audit(
-        db,
-        org_id=org_id,
-        actor_user_id=actor_id,
-        action="credit_note.issued",
-        entity_type="credit_note",
-        entity_id=note.id,
-        data={
-            "invoice_id": str(inv.id),
-            "number": note.number,
-            "amount_cents": amount_cents,
-        },
-    )
-    events.emit(
-        db,
-        org_id=org_id,
-        event_type="credit_note.issued",
-        data={
-            "invoice_id": str(inv.id),
-            "credit_note_id": str(note.id),
-            "number": note.number,
-            "amount_cents": amount_cents,
-        },
-    )
-    if commit:
-        db.commit()
-    return note
-
-
-def record_refund(
-    db: Session,
-    *,
-    org_id: uuid.UUID,
-    actor_id: uuid.UUID,
-    invoice_id: uuid.UUID,
-    payment_id: uuid.UUID,
-    amount_cents: int,
-    refunded_on: date | None,
-    method: str | None,
-    reference: str | None,
-    reason: str,
-    commit: bool = True,
-) -> PaymentRefund:
-    """Record money returned against one original payment; never edits that payment."""
-    inv = get_invoice(db, org_id, invoice_id, lock=True)
-    if inv.status in {"draft", "void"}:
-        raise Conflict(
-            f"Cannot refund a payment on a {inv.status} invoice",
-            code="invoice_not_refundable",
-        )
-
-    payment = db.scalar(
-        select(Payment)
-        .where(
-            Payment.org_id == org_id,
-            Payment.invoice_id == inv.id,
-            Payment.id == payment_id,
-        )
-        .with_for_update()
-    )
-    if payment is None:
-        raise NotFound("Payment not found for this invoice")
-
-    already_refunded = refunds_for_payment(db, org_id, payment.id)
-    refundable = payment.amount_cents - already_refunded
-    if amount_cents > refundable:
-        raise BusinessRuleViolation(
-            f"Refund exceeds the remaining refundable amount of {refundable} cents",
-            code="refund_exceeds_payment",
-        )
-
-    refund = PaymentRefund(
-        org_id=org_id,
-        payment_id=payment.id,
-        amount_cents=amount_cents,
-        refunded_on=refunded_on or utcnow().date(),
-        method=method or payment.method,
-        reference=reference,
-        reason=reason,
-        created_by=actor_id,
-    )
-    db.add(refund)
-    inv.amount_refunded_cents += amount_cents
-    _sync_settlement_status(inv)
-    db.flush()
-    record_audit(
-        db,
-        org_id=org_id,
-        actor_user_id=actor_id,
-        action="payment.refunded",
-        entity_type="payment_refund",
-        entity_id=refund.id,
-        data={
-            "invoice_id": str(inv.id),
-            "payment_id": str(payment.id),
-            "amount_cents": amount_cents,
-            "method": refund.method,
-            "reference": reference,
-        },
-    )
-    events.emit(
-        db,
-        org_id=org_id,
-        event_type="payment.refunded",
-        data={
-            "invoice_id": str(inv.id),
-            "payment_id": str(payment.id),
-            "refund_id": str(refund.id),
-            "amount_cents": amount_cents,
-        },
-    )
-    if commit:
-        db.commit()
-    return refund
 
 
 def create_invoice(
@@ -745,8 +494,10 @@ def record_payment(
     )
     db.add(payment)
     inv.amount_paid_cents += amount_cents_
-    _sync_settlement_status(inv)
-    settled = inv.status == "paid"
+    settled = inv.amount_paid_cents == inv.total_cents
+    inv.status = "paid" if settled else "partially_paid"
+    if settled:
+        inv.paid_at = utcnow()
     db.flush()
     record_audit(
         db,
@@ -781,16 +532,10 @@ def void_invoice(
     inv = get_invoice(db, org_id, invoice_id, lock=True)
     if inv.status == "draft":
         raise Conflict("Discard a draft instead of voiding it", code="invoice_is_draft")
-    if inv.status != "sent" or inv.amount_paid_cents or inv.credit_note_cents:
-        if inv.amount_paid_cents:
-            code = "invoice_has_payments"
-        elif inv.credit_note_cents:
-            code = "invoice_has_credit_notes"
-        else:
-            code = "invoice_not_voidable"
+    if inv.status != "sent":
         raise Conflict(
-            "Only an issued invoice with no payments or credit notes can be voided",
-            code=code,
+            "Only an issued invoice with no payments can be voided",
+            code="invoice_has_payments" if inv.amount_paid_cents else "invoice_not_voidable",
         )
     for line in lines_of(db, org_id, inv.id):
         _release_entries(db, org_id, line.time_entry_ids)
